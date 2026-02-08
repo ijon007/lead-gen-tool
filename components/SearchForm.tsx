@@ -30,7 +30,7 @@ export function SearchForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3 justify-center">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3">
       <div className="flex-1 space-y-2 min-w-0">
         <label htmlFor="category" className="text-xs font-medium text-foreground block">
           Category

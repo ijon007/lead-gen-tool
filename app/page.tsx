@@ -5,7 +5,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { SearchForm } from "@/components/SearchForm"
 import { ResultsTable } from "@/components/ResultsTable"
 import { ExportButton } from "@/components/ExportButton"
-import { ColumnCustomizer } from "@/components/ColumnCustomizer"
 import { SheetTabs } from "@/components/SheetTabs"
 import { MOCK_LEADS, DEFAULT_TABLE_COLUMNS } from "@/constants"
 import { Lead, SearchParams, TableColumnConfig, SheetState } from "@/types"
@@ -205,31 +204,26 @@ export default function Page() {
               onRenameSheet={handleRenameSheet}
             />
             <header className="mb-6 transition-all duration-300">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 mb-6">
                 <EditableTitle
                   key={activeSheetId}
                   name={activeSheet.name}
                   onSave={(newName) => handleRenameSheet(activeSheetId, newName)}
                 />
-                <div className="shrink-0">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-3 min-w-0 sm:flex-1">
                   <SearchForm onSearch={handleSearch} />
+                  <ExportButton leads={filteredLeads} columns={activeSheet.columns} />
                 </div>
               </div>
             </header>
 
             <main className="space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-300">
-              <div className="flex items-center justify-end gap-2">
-                <ColumnCustomizer
-                  columns={activeSheet.columns}
-                  onChange={handleColumnsChange}
-                />
-                <ExportButton leads={filteredLeads} columns={activeSheet.columns} />
-              </div>
               <ResultsTable
                 leads={filteredLeads}
                 visibleColumns={activeSheet.columns}
                 onUpdateLead={handleUpdateLead}
                 onUpdateStatus={handleUpdateStatus}
+                onColumnsChange={handleColumnsChange}
               />
             </main>
           </>

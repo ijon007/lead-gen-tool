@@ -16,16 +16,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
 import { Lead, TableColumnConfig } from "@/types"
 import { LEAD_STATUSES } from "@/constants"
-import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react"
+import { CaretDownIcon, CaretUpIcon, Plus } from "@phosphor-icons/react"
 import { getStatusLabel, getStatusVariant, getStatusColor, getStatusBadgeColor } from "@/utils/status"
 import { MarkdownCell } from "@/components/MarkdownCell"
 
 const COL_INDEX = "col-index"
 const COL_STATUS = "col-status"
+const COL_ADD = "col-add"
 const DEFAULT_INDEX_WIDTH = 40
+const DEFAULT_ADD_WIDTH = 48
 const DEFAULT_STATUS_WIDTH = 128
 const DEFAULT_COL_WIDTH = 140
 const MIN_COL_WIDTH = 40
@@ -37,6 +40,7 @@ interface ResultsTableProps {
   visibleColumns: TableColumnConfig[]
   onUpdateLead: (id: string, field: keyof Lead, value: string) => void
   onUpdateStatus: (id: string, status: string) => void
+  onColumnsChange?: (columns: TableColumnConfig[]) => void
 }
 
 type SortDirection = "asc" | "desc" | null
@@ -82,6 +86,7 @@ export function ResultsTable({
   visibleColumns,
   onUpdateLead,
   onUpdateStatus,
+  onColumnsChange,
 }: ResultsTableProps) {
   const visibleCols = visibleColumns.filter((col) => col.visible)
   const [sortKey, setSortKey] = useState<string | null>(null)
@@ -100,6 +105,8 @@ export function ResultsTable({
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(initialColumnWidths)
   const [rowHeights, setRowHeights] = useState<Record<string, number>>({})
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const [resizingColumn, setResizingColumn] = useState<string | null>(null)
   const [resizingRow, setResizingRow] = useState<string | null>(null)
@@ -216,10 +223,11 @@ export function ResultsTable({
             <col key={col.id} style={{ width: columnWidths[getColumnKey(col)] }} />
           ))}
           <col style={{ width: columnWidths[COL_STATUS] }} />
+          <col style={{ width: DEFAULT_ADD_WIDTH }} />
         </colgroup>
-        <TableHeader className="sticky-table-header sticky top-0 z-10 bg-muted [&>tr]:bg-muted/50">
+        <TableHeader className="sticky-table-header sticky top-0 z-20 bg-muted [&>tr]:bg-muted">
           <TableRow>
-            <TableHead className="sticky top-0 z-10 w-10 max-w-12 text-center bg-muted/50">
+            <TableHead className="sticky left-0 top-0 z-30 w-10 max-w-12 text-center bg-muted border-r border-border">
               <span className="whitespace-nowrap text-xs">#</span>
               <div
                 role="separator"
@@ -236,7 +244,7 @@ export function ResultsTable({
               return (
                 <TableHead
                   key={column.id}
-                  className="sticky top-0 z-10 cursor-pointer select-none hover:bg-muted/50 transition-colors bg-muted/50 px-2.5 py-1.5"
+                  className="sticky top-0 z-20 cursor-pointer select-none hover:bg-muted/80 transition-colors bg-muted px-2.5 py-1.5 border-r border-border"
                   onClick={() => handleHeaderClick(column.id)}
                 >
                   <div className="flex items-center gap-1 pr-2">
@@ -259,7 +267,7 @@ export function ResultsTable({
                 </TableHead>
               )
             })}
-            <TableHead className="sticky top-0 z-10 w-32 text-xs bg-muted/50">
+            <TableHead className="sticky top-0 z-20 w-32 text-xs bg-muted border-r border-border">
               Status
               <div
                 role="separator"
@@ -270,6 +278,43 @@ export function ResultsTable({
                 <span className="w-0.5 h-4 rounded-full bg-muted-foreground/40 group-hover:bg-primary/70 transition-colors" />
               </div>
             </TableHead>
+            <TableHead className="sticky right-0 top-0 z-30 bg-muted border-l border-border p-0 w-12">
+              {onColumnsChange && mounted ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        type="button"
+                        className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        aria-label="Add or remove columns"
+                      >
+                        <Plus className="size-4" />
+                      </button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-48">
+                    {visibleColumns.map((column) => (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={column.visible}
+                        onCheckedChange={() => {
+                          const updated = visibleColumns.map((col) =>
+                            col.id === column.id ? { ...col, visible: !col.visible } : col
+                          )
+                          onColumnsChange(updated)
+                        }}
+                      >
+                        {column.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : onColumnsChange ? (
+                <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                  <Plus className="size-4" />
+                </span>
+              ) : null}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -277,7 +322,7 @@ export function ResultsTable({
             const h = rowHeights[lead.id] ?? DEFAULT_ROW_HEIGHT
             return (
               <TableRow key={lead.id} style={{ height: h }} className="group/row">
-                <TableCell className="text-center text-xs text-muted-foreground p-0 align-top relative">
+                <TableCell className="sticky left-0 z-20 bg-background text-center text-xs text-muted-foreground p-0 align-top border-r border-border">
                   <div className="py-1.5 px-2.5">{index + 1}</div>
                   <div
                     role="separator"
@@ -338,6 +383,7 @@ export function ResultsTable({
                     </DropdownMenu>
                   </div>
                 </TableCell>
+                <TableCell className="sticky right-0 z-20 w-12 p-0 align-top bg-background border-l border-border" />
               </TableRow>
             )
           })}
