@@ -8,6 +8,7 @@ export interface Lead {
   website: string;
   address: string;
   description?: string;
+  status?: string;
 }
 
 export interface SearchParams {

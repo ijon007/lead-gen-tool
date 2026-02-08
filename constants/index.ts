@@ -1,5 +1,16 @@
 import { Lead, TableColumnConfig } from "@/types";
 
+export const LEAD_STATUSES = [
+  { value: "rejected", label: "Rejected" },
+  { value: "booked", label: "Booked" },
+  { value: "closed", label: "Closed" },
+  { value: "voicemail", label: "Voicemail" },
+  { value: "open", label: "Open" },
+  { value: "waiting", label: "Waiting" },
+  { value: "does-not-exist", label: "Does not exist" },
+  { value: "waiting-plus", label: "Strong" },
+] as const;
+
 export const CATEGORIES = [
   { value: "restaurant", label: "Restaurant" },
   { value: "retail", label: "Retail" },

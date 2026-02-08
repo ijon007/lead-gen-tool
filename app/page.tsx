@@ -12,16 +12,29 @@ export default function Page() {
   const [hasSearched, setHasSearched] = useState(true)
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null)
   const [columns, setColumns] = useState<TableColumnConfig[]>(DEFAULT_TABLE_COLUMNS)
+  const [leads, setLeads] = useState<Lead[]>(() => MOCK_LEADS)
 
   const filteredLeads = useMemo(() => {
-    if (!searchParams) return MOCK_LEADS
-    return MOCK_LEADS.filter((lead) => {
+    if (!searchParams) return leads
+    return leads.filter((lead) => {
       const categoryMatch = !searchParams.category || lead.category === searchParams.category
       const locationMatch = !searchParams.location ||
         lead.location.toLowerCase().includes(searchParams.location.toLowerCase())
       return categoryMatch && locationMatch
     })
-  }, [searchParams])
+  }, [leads, searchParams])
+
+  const handleUpdateLead = (id: string, field: keyof Lead, value: string) => {
+    setLeads((prev) =>
+      prev.map((lead) => (lead.id === id ? { ...lead, [field]: value } : lead))
+    )
+  }
+
+  const handleUpdateStatus = (id: string, status: string) => {
+    setLeads((prev) =>
+      prev.map((lead) => (lead.id === id ? { ...lead, status } : lead))
+    )
+  }
 
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params)
@@ -57,7 +70,12 @@ export default function Page() {
                 <ColumnCustomizer columns={columns} onChange={setColumns} />
                 <ExportButton leads={filteredLeads} columns={columns} />
               </div>
-              <ResultsTable leads={filteredLeads} visibleColumns={columns} />
+              <ResultsTable
+                leads={filteredLeads}
+                visibleColumns={columns}
+                onUpdateLead={handleUpdateLead}
+                onUpdateStatus={handleUpdateStatus}
+              />
             </main>
           </>
         ) : (
