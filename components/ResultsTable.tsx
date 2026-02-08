@@ -214,6 +214,7 @@ export function ResultsTable({
   return (
     <div className="border rounded-md">
       <Table
+        className="border-separate border-spacing-0"
         style={{ tableLayout: "fixed", width: "100%" }}
         wrapperClassName="overflow-auto max-h-[calc(100vh-12rem)] scrollbar-thin"
       >
@@ -225,7 +226,7 @@ export function ResultsTable({
           <col style={{ width: columnWidths[COL_STATUS] }} />
           <col style={{ width: DEFAULT_ADD_WIDTH }} />
         </colgroup>
-        <TableHeader className="sticky-table-header sticky top-0 z-20 bg-muted [&>tr]:bg-muted">
+        <TableHeader className="sticky-table-header z-20 bg-muted [&>tr]:bg-muted">
           <TableRow>
             <TableHead className="sticky left-0 top-0 z-30 w-10 max-w-12 text-center bg-muted border-r border-border">
               <span className="whitespace-nowrap text-xs">#</span>
@@ -317,7 +318,7 @@ export function ResultsTable({
             </TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="[&_td]:border-b [&_td]:border-border">
           {sortedLeads.map((lead, index) => {
             const h = rowHeights[lead.id] ?? DEFAULT_ROW_HEIGHT
             return (

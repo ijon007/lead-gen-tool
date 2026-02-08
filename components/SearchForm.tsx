@@ -32,9 +32,6 @@ export function SearchForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3">
       <div className="flex-1 space-y-2 min-w-0">
-        <label htmlFor="category" className="text-xs font-medium text-foreground block">
-          Category
-        </label>
         <Select value={category} onValueChange={(value) => setCategory(value || "")}>
           <SelectTrigger id="category" className="w-full mb-0">
             <SelectValue placeholder="Select category" />
@@ -50,9 +47,6 @@ export function SearchForm({
       </div>
 
       <div className="flex-1 space-y-2 min-w-0">
-        <label htmlFor="location" className="text-xs font-medium text-foreground block">
-          Location
-        </label>
         <Input
           id="location"
           type="text"

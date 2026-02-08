@@ -162,6 +162,45 @@ export default function Page() {
     })
   }, [])
 
+  const handleDuplicateSheet = useCallback(
+    (id: string) => {
+      const source = sheets[id]
+      if (!source) return
+      const newSheet: SheetState = {
+        id: crypto.randomUUID(),
+        name: `${source.name} (copy)`,
+        leads: source.leads.map((l) => ({ ...l, id: crypto.randomUUID() })),
+        searchParams: source.searchParams,
+        columns: source.columns.map((c) => ({ ...c })),
+      }
+      setSheets((prev) => ({ ...prev, [newSheet.id]: newSheet }))
+      const idx = sheetOrder.indexOf(id)
+      setSheetOrder((prev) =>
+        idx < 0 ? [...prev, newSheet.id] : [...prev.slice(0, idx + 1), newSheet.id, ...prev.slice(idx + 1)]
+      )
+      router.replace(`${pathname}?sheet=${newSheet.id}`)
+    },
+    [sheets, sheetOrder, router, pathname]
+  )
+
+  const handleDeleteSheet = useCallback(
+    (id: string) => {
+      if (sheetOrder.length <= 1) return
+      const newOrder = sheetOrder.filter((s) => s !== id)
+      setSheetOrder(newOrder)
+      setSheets((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      if (activeSheetId === id) {
+        const nextActive = newOrder[0]
+        if (nextActive) router.replace(`${pathname}?sheet=${nextActive}`)
+      }
+    },
+    [sheetOrder, activeSheetId, router, pathname]
+  )
+
   const handleColumnsChange = useCallback(
     (columns: TableColumnConfig[]) => {
       if (!activeSheet) return
@@ -181,54 +220,46 @@ export default function Page() {
   }
 
   return (
-    <div
-      className={`min-h-screen transition-all duration-300 ${
-        hasSearched
-          ? "py-2 px-4 sm:px-6 lg:px-8"
-          : "flex items-center justify-center px-4"
-      }`}
-    >
-      <div
-        className={`w-full max-w-7xl mx-auto transition-all duration-300 ${
-          hasSearched ? "" : "max-w-2xl"
-        }`}
-      >
-        {hasSearched ? (
-          <>
-            <SheetTabs
-              sheets={sheets}
-              sheetOrder={sheetOrder}
-              activeSheetId={activeSheetId}
-              onSelectSheet={handleSelectSheet}
-              onAddSheet={handleAddSheet}
-              onRenameSheet={handleRenameSheet}
-            />
-            <header className="mb-6 transition-all duration-300">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 mb-6">
-                <EditableTitle
-                  key={activeSheetId}
-                  name={activeSheet.name}
-                  onSave={(newName) => handleRenameSheet(activeSheetId, newName)}
-                />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-3 min-w-0 sm:flex-1">
-                  <SearchForm onSearch={handleSearch} />
-                  <ExportButton leads={filteredLeads} columns={activeSheet.columns} />
-                </div>
-              </div>
-            </header>
-
-            <main className="space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-300">
-              <ResultsTable
-                leads={filteredLeads}
-                visibleColumns={activeSheet.columns}
-                onUpdateLead={handleUpdateLead}
-                onUpdateStatus={handleUpdateStatus}
-                onColumnsChange={handleColumnsChange}
+    <div className="min-h-screen py-2 px-4 sm:px-6 lg:px-8 transition-all duration-300">
+      <div className="w-full max-w-7xl mx-auto transition-all duration-300">
+        <SheetTabs
+          sheets={sheets}
+          sheetOrder={sheetOrder}
+          activeSheetId={activeSheetId}
+          onSelectSheet={handleSelectSheet}
+          onAddSheet={handleAddSheet}
+          onRenameSheet={handleRenameSheet}
+          onDuplicateSheet={handleDuplicateSheet}
+          onDeleteSheet={handleDeleteSheet}
+        />
+        {hasSearched && (
+          <header className="mb-6 transition-all duration-300">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4 mb-6">
+              <EditableTitle
+                key={activeSheetId}
+                name={activeSheet.name}
+                onSave={(newName) => handleRenameSheet(activeSheetId, newName)}
               />
-            </main>
-          </>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-3 min-w-0 sm:flex-1">
+                <SearchForm onSearch={handleSearch} />
+                <ExportButton leads={filteredLeads} columns={activeSheet.columns} />
+              </div>
+            </div>
+          </header>
+        )}
+
+        {hasSearched ? (
+          <main className="space-y-4 animate-in fade-in-0 slide-in-from-top-4 duration-300">
+            <ResultsTable
+              leads={filteredLeads}
+              visibleColumns={activeSheet.columns}
+              onUpdateLead={handleUpdateLead}
+              onUpdateStatus={handleUpdateStatus}
+              onColumnsChange={handleColumnsChange}
+            />
+          </main>
         ) : (
-          <div className="text-center space-y-8 animate-in fade-in-0 duration-300">
+          <div className="text-center space-y-8 animate-in fade-in-0 duration-300 py-12">
             <h1 className="text-4xl font-bold text-foreground">Lead Generator</h1>
             <p className="text-muted-foreground text-sm">
               Search for business leads by category and location
