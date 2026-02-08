@@ -21,6 +21,7 @@ import { Lead, TableColumnConfig } from "@/types"
 import { LEAD_STATUSES } from "@/constants"
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react"
 import { getStatusLabel, getStatusVariant, getStatusColor, getStatusBadgeColor } from "@/utils/status"
+import { MarkdownCell } from "@/components/MarkdownCell"
 
 interface ResultsTableProps {
   leads: Lead[]
@@ -74,7 +75,7 @@ export function ResultsTable({
     null
   )
   const [editValue, setEditValue] = useState<string>("")
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const sortedLeads = useMemo(
     () => sortLeads(leads, sortKey, sortDirection),
@@ -115,12 +116,13 @@ export function ResultsTable({
     }
   }
 
-  const handleCellKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.currentTarget.blur()
-    } else if (e.key === "Escape") {
+  const handleCellKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Escape") {
       setEditingCell(null)
       setEditValue("")
+    } else if (e.key === "Tab" || (e.key === "Enter" && e.ctrlKey)) {
+      e.preventDefault()
+      e.currentTarget.blur()
     }
   }
 
@@ -184,21 +186,16 @@ export function ResultsTable({
                     className={`text-xs relative p-0 ${!isEditing ? "cursor-text" : ""}`}
                     onClick={() => !isEditing && handleCellClick(lead.id, column.id, String(value))}
                   >
-                    {isEditing ? (
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={handleCellBlur}
-                        onKeyDown={handleCellKeyDown}
-                        className="absolute inset-0 w-full h-full border-2 border-primary rounded-none bg-background text-xs outline-none focus:ring-2 focus:ring-primary/20 min-h-8"
-                      />
-                    ) : (
-                      <div className="px-2.5 py-1.5 min-h-8 flex items-center">
-                        {String(value)}
-                      </div>
-                    )}
+                    <MarkdownCell
+                      value={String(value)}
+                      isEditing={isEditing}
+                      editValue={editValue}
+                      onEditChange={setEditValue}
+                      onBlur={handleCellBlur}
+                      onKeyDown={handleCellKeyDown}
+                      inputRef={inputRef}
+                      onClick={() => handleCellClick(lead.id, column.id, String(value))}
+                    />
                   </TableCell>
                 )
               })}
