@@ -28,7 +28,7 @@ const COL_INDEX = "col-index"
 const COL_STATUS = "col-status"
 const COL_ADD = "col-add"
 const DEFAULT_INDEX_WIDTH = 40
-const DEFAULT_ADD_WIDTH = 48
+const DEFAULT_ADD_WIDTH = 28
 const DEFAULT_STATUS_WIDTH = 128
 const DEFAULT_COL_WIDTH = 140
 const MIN_COL_WIDTH = 40
@@ -227,7 +227,7 @@ export function ResultsTable({
           <col style={{ width: DEFAULT_ADD_WIDTH }} />
         </colgroup>
         <TableHeader className="sticky-table-header z-20 bg-muted [&>tr]:bg-muted">
-          <TableRow>
+          <TableRow className="border-b [&_th]:border-b">
             <TableHead className="sticky left-0 top-0 z-30 w-10 max-w-12 text-center bg-muted border-r border-border">
               <span className="whitespace-nowrap text-xs">#</span>
               <div
@@ -279,17 +279,17 @@ export function ResultsTable({
                 <span className="w-0.5 h-4 rounded-full bg-muted-foreground/40 group-hover:bg-primary/70 transition-colors" />
               </div>
             </TableHead>
-            <TableHead className="sticky right-0 top-0 z-30 bg-muted border-l border-border p-0 w-12">
+            <TableHead className="sticky right-0 top-0 z-30 bg-muted border-l border-border p-0 w-8">
               {onColumnsChange && mounted ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
                       <button
                         type="button"
-                        className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                         aria-label="Add or remove columns"
                       >
-                        <Plus className="size-4" />
+                        <Plus className="size-3" />
                       </button>
                     }
                   />
@@ -384,7 +384,7 @@ export function ResultsTable({
                     </DropdownMenu>
                   </div>
                 </TableCell>
-                <TableCell className="sticky right-0 z-20 w-12 p-0 align-top bg-background border-l border-border" />
+                <TableCell className="sticky right-0 z-20 w-8 p-0 align-top bg-background border-l border-border" />
               </TableRow>
             )
           })}
