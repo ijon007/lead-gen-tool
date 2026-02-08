@@ -23,6 +23,15 @@ import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react"
 import { getStatusLabel, getStatusVariant, getStatusColor, getStatusBadgeColor } from "@/utils/status"
 import { MarkdownCell } from "@/components/MarkdownCell"
 
+const COL_INDEX = "col-index"
+const COL_STATUS = "col-status"
+const DEFAULT_INDEX_WIDTH = 40
+const DEFAULT_STATUS_WIDTH = 128
+const DEFAULT_COL_WIDTH = 140
+const MIN_COL_WIDTH = 40
+const MIN_ROW_HEIGHT = 32
+const DEFAULT_ROW_HEIGHT = 40
+
 interface ResultsTableProps {
   leads: Lead[]
   visibleColumns: TableColumnConfig[]
@@ -32,7 +41,7 @@ interface ResultsTableProps {
 
 type SortDirection = "asc" | "desc" | null
 
-function isNumeric(value: any): boolean {
+function isNumeric(value: unknown): boolean {
   if (value === null || value === undefined || value === "") return false
   const num = Number(value)
   return !isNaN(num) && isFinite(num)
@@ -62,6 +71,12 @@ function sortLeads(leads: Lead[], sortKey: string | null, sortDirection: SortDir
   })
 }
 
+function getColumnKey(col: TableColumnConfig | "index" | "status"): string {
+  if (col === "index") return COL_INDEX
+  if (col === "status") return COL_STATUS
+  return `col-${col.id}`
+}
+
 export function ResultsTable({
   leads,
   visibleColumns,
@@ -76,6 +91,78 @@ export function ResultsTable({
   )
   const [editValue, setEditValue] = useState<string>("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const initialColumnWidths = useMemo(() => {
+    const w: Record<string, number> = {
+      [COL_INDEX]: DEFAULT_INDEX_WIDTH,
+      [COL_STATUS]: DEFAULT_STATUS_WIDTH,
+    }
+    visibleCols.forEach((c) => {
+      w[getColumnKey(c)] = DEFAULT_COL_WIDTH
+    })
+    return w
+  }, [visibleCols])
+
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(initialColumnWidths)
+  const [rowHeights, setRowHeights] = useState<Record<string, number>>({})
+
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null)
+  const [resizingRow, setResizingRow] = useState<string | null>(null)
+  const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0 })
+
+  const visibleColumnIds = useMemo(
+    () => visibleColumns.filter((c) => c.visible).map((c) => c.id).sort().join(","),
+    [visibleColumns]
+  )
+
+  useEffect(() => {
+    setColumnWidths((prev) => {
+      const next = { ...prev }
+      next[COL_INDEX] = prev[COL_INDEX] ?? DEFAULT_INDEX_WIDTH
+      next[COL_STATUS] = prev[COL_STATUS] ?? DEFAULT_STATUS_WIDTH
+      visibleCols.forEach((c) => {
+        const k = getColumnKey(c)
+        if (next[k] == null) next[k] = DEFAULT_COL_WIDTH
+      })
+      return next
+    })
+  }, [visibleColumnIds])
+
+  useEffect(() => {
+    if (!resizingColumn) return
+    const onMove = (e: MouseEvent) => {
+      const w = Math.max(
+        MIN_COL_WIDTH,
+        resizeStart.current.width + (e.clientX - resizeStart.current.x)
+      )
+      setColumnWidths((prev) => ({ ...prev, [resizingColumn]: w }))
+    }
+    const onUp = () => setResizingColumn(null)
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+  }, [resizingColumn])
+
+  useEffect(() => {
+    if (!resizingRow) return
+    const onMove = (e: MouseEvent) => {
+      const h = Math.max(
+        MIN_ROW_HEIGHT,
+        resizeStart.current.height + (e.clientY - resizeStart.current.y)
+      )
+      setRowHeights((prev) => ({ ...prev, [resizingRow]: h }))
+    }
+    const onUp = () => setResizingRow(null)
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+  }, [resizingRow])
 
   const sortedLeads = useMemo(
     () => sortLeads(leads, sortKey, sortDirection),
@@ -126,6 +213,19 @@ export function ResultsTable({
     }
   }
 
+  const startColumnResize = (key: string, currentWidth: number) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(key)
+    resizeStart.current = { x: e.clientX, y: 0, width: currentWidth, height: 0 }
+  }
+
+  const startRowResize = (rowId: string, currentHeight: number) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingRow(rowId)
+    resizeStart.current = { x: 0, y: e.clientY, width: 0, height: currentHeight }
+  }
 
   if (leads.length === 0) {
     return (
@@ -140,93 +240,148 @@ export function ResultsTable({
   }
 
   return (
-    <div className="overflow-x-auto border">
-      <Table>
+    <div className="overflow-x-auto border rounded-md">
+      <Table style={{ tableLayout: "fixed", width: "100%" }}>
+        <colgroup>
+          <col style={{ width: columnWidths[COL_INDEX] }} />
+          {visibleCols.map((col) => (
+            <col key={col.id} style={{ width: columnWidths[getColumnKey(col)] }} />
+          ))}
+          <col style={{ width: columnWidths[COL_STATUS] }} />
+        </colgroup>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10 max-w-12 text-center">#</TableHead>
+            <TableHead className="relative w-10 max-w-12 text-center bg-muted/50">
+              <span className="whitespace-nowrap text-xs">#</span>
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize touch-none flex items-center justify-center group border-r border-transparent hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
+                onMouseDown={startColumnResize(COL_INDEX, columnWidths[COL_INDEX])}
+              >
+                <span className="w-0.5 h-4 rounded-full bg-muted-foreground/40 group-hover:bg-primary/70 transition-colors" />
+              </div>
+            </TableHead>
             {visibleCols.map((column) => {
               const isActive = sortKey === column.id
+              const key = getColumnKey(column)
               return (
                 <TableHead
                   key={column.id}
-                  className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                  className="relative cursor-pointer select-none hover:bg-muted/50 transition-colors bg-muted/50 px-2.5 py-1.5"
                   onClick={() => handleHeaderClick(column.id)}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pr-2">
                     <span className="whitespace-nowrap text-xs">{column.label}</span>
-                    {isActive && (
-                      sortDirection === "asc" ? (
+                    {isActive &&
+                      (sortDirection === "asc" ? (
                         <CaretUpIcon className="size-3" />
                       ) : (
                         <CaretDownIcon className="size-3" />
-                      )
-                    )}
+                      ))}
+                  </div>
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize touch-none flex items-center justify-center group border-r border-transparent hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
+                    onMouseDown={startColumnResize(key, columnWidths[key])}
+                  >
+                    <span className="w-0.5 h-4 rounded-full bg-muted-foreground/40 group-hover:bg-primary/70 transition-colors" />
                   </div>
                 </TableHead>
               )
             })}
-            <TableHead className="w-32 text-xs">Status</TableHead>
+            <TableHead className="relative w-32 text-xs bg-muted/50">
+              Status
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize touch-none flex items-center justify-center group border-r border-transparent hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
+                onMouseDown={startColumnResize(COL_STATUS, columnWidths[COL_STATUS])}
+              >
+                <span className="w-0.5 h-4 rounded-full bg-muted-foreground/40 group-hover:bg-primary/70 transition-colors" />
+              </div>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedLeads.map((lead, index) => (
-            <TableRow key={lead.id}>
-              <TableCell className="text-center text-xs text-muted-foreground w-10 max-w-12 p-0">
-                {index + 1}
-              </TableCell>
-              {visibleCols.map((column) => {
-                const value = lead[column.id as keyof Lead] || ""
-                const isEditing =
-                  editingCell?.rowId === lead.id && editingCell?.columnId === column.id
-
-                return (
-                  <TableCell
-                    key={column.id}
-                    className={`text-xs relative p-0 ${!isEditing ? "cursor-text" : ""}`}
-                    onClick={() => !isEditing && handleCellClick(lead.id, column.id, String(value))}
+          {sortedLeads.map((lead, index) => {
+            const h = rowHeights[lead.id] ?? DEFAULT_ROW_HEIGHT
+            return (
+              <TableRow key={lead.id} style={{ height: h }} className="group/row">
+                <TableCell className="text-center text-xs text-muted-foreground p-0 align-top relative">
+                  <div className="py-1.5 px-2.5">{index + 1}</div>
+                  <div
+                    role="separator"
+                    aria-orientation="horizontal"
+                    className="absolute left-0 right-0 bottom-0 h-1.5 cursor-row-resize touch-none hover:bg-primary/20 active:bg-primary/30 opacity-0 group-hover/row:opacity-100 transition-opacity flex items-center justify-center z-10"
+                    onMouseDown={startRowResize(lead.id, h)}
                   >
-                    <MarkdownCell
-                      value={String(value)}
-                      isEditing={isEditing}
-                      editValue={editValue}
-                      onEditChange={setEditValue}
-                      onBlur={handleCellBlur}
-                      onKeyDown={handleCellKeyDown}
-                      inputRef={inputRef}
-                      onClick={() => handleCellClick(lead.id, column.id, String(value))}
-                    />
-                  </TableCell>
-                )
-              })}
-              <TableCell className="w-32">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <button className="w-full text-left">
-                        <Badge variant={getStatusVariant(lead.status)} className={`cursor-pointer ${getStatusBadgeColor(lead.status)}`}>
-                          {getStatusLabel(lead.status)}
-                        </Badge>
-                      </button>
-                    }
-                  />
-                  <DropdownMenuContent align="end" className="max-h-none">
-                    {LEAD_STATUSES.map((status) => (
-                      <DropdownMenuItem
-                        key={status.value}
-                        onClick={() => {
-                          onUpdateStatus(lead.id, status.value)
-                        }}
-                        className={getStatusColor(status.value)}
-                      >
-                        {status.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                    <span className="h-0.5 w-8 rounded-full bg-muted-foreground/40" />
+                  </div>
+                </TableCell>
+                {visibleCols.map((column) => {
+                  const value = lead[column.id as keyof Lead] || ""
+                  const isEditing =
+                    editingCell?.rowId === lead.id && editingCell?.columnId === column.id
+
+                  return (
+                    <TableCell
+                      key={column.id}
+                      className={`text-xs relative p-0 align-top ${!isEditing ? "cursor-text" : ""}`}
+                      onClick={() =>
+                        !isEditing && handleCellClick(lead.id, column.id, String(value))
+                      }
+                      style={{ minWidth: 0, wordBreak: "break-word", overflowWrap: "break-word" }}
+                    >
+                      <MarkdownCell
+                        value={String(value)}
+                        isEditing={isEditing}
+                        editValue={editValue}
+                        onEditChange={setEditValue}
+                        onBlur={handleCellBlur}
+                        onKeyDown={handleCellKeyDown}
+                        inputRef={inputRef}
+                        onClick={() => handleCellClick(lead.id, column.id, String(value))}
+                        className="min-w-0"
+                      />
+                    </TableCell>
+                  )
+                })}
+                <TableCell className="w-32 p-0 align-top">
+                  <div className="py-1.5 px-2.5">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <button className="w-full text-left">
+                            <Badge
+                              variant={getStatusVariant(lead.status)}
+                              className={`cursor-pointer ${getStatusBadgeColor(lead.status)}`}
+                            >
+                              {getStatusLabel(lead.status)}
+                            </Badge>
+                          </button>
+                        }
+                      />
+                      <DropdownMenuContent align="end" className="max-h-none">
+                        {LEAD_STATUSES.map((status) => (
+                          <DropdownMenuItem
+                            key={status.value}
+                            onClick={() => {
+                              onUpdateStatus(lead.id, status.value)
+                            }}
+                            className={getStatusColor(status.value)}
+                          >
+                            {status.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
