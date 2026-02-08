@@ -86,11 +86,6 @@ export function ResultsTable({
   const visibleCols = visibleColumns.filter((col) => col.visible)
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
-  const [editingCell, setEditingCell] = useState<{ rowId: string; columnId: string } | null>(
-    null
-  )
-  const [editValue, setEditValue] = useState<string>("")
-  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const initialColumnWidths = useMemo(() => {
     const w: Record<string, number> = {
@@ -169,13 +164,6 @@ export function ResultsTable({
     [leads, sortKey, sortDirection]
   )
 
-  useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-    }
-  }, [editingCell])
-
   const handleHeaderClick = (columnId: string) => {
     if (sortKey === columnId) {
       if (sortDirection === "asc") {
@@ -187,29 +175,6 @@ export function ResultsTable({
     } else {
       setSortKey(columnId)
       setSortDirection("asc")
-    }
-  }
-
-  const handleCellClick = (rowId: string, columnId: string, currentValue: string) => {
-    setEditingCell({ rowId, columnId })
-    setEditValue(String(currentValue || ""))
-  }
-
-  const handleCellBlur = () => {
-    if (editingCell) {
-      onUpdateLead(editingCell.rowId, editingCell.columnId as keyof Lead, editValue)
-      setEditingCell(null)
-      setEditValue("")
-    }
-  }
-
-  const handleCellKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Escape") {
-      setEditingCell(null)
-      setEditValue("")
-    } else if (e.key === "Tab" || (e.key === "Enter" && e.ctrlKey)) {
-      e.preventDefault()
-      e.currentTarget.blur()
     }
   }
 
@@ -240,18 +205,21 @@ export function ResultsTable({
   }
 
   return (
-    <div className="overflow-x-auto border rounded-md">
-      <Table style={{ tableLayout: "fixed", width: "100%" }}>
-        <colgroup>
+    <div className="border rounded-md">
+      <Table
+        style={{ tableLayout: "fixed", width: "100%" }}
+        wrapperClassName="overflow-auto max-h-[calc(100vh-12rem)] scrollbar-thin"
+      >
+        <colgroup className="border-b">
           <col style={{ width: columnWidths[COL_INDEX] }} />
           {visibleCols.map((col) => (
             <col key={col.id} style={{ width: columnWidths[getColumnKey(col)] }} />
           ))}
           <col style={{ width: columnWidths[COL_STATUS] }} />
         </colgroup>
-        <TableHeader>
+        <TableHeader className="sticky-table-header sticky top-0 z-10 bg-muted [&>tr]:bg-muted/50">
           <TableRow>
-            <TableHead className="relative w-10 max-w-12 text-center bg-muted/50">
+            <TableHead className="sticky top-0 z-10 w-10 max-w-12 text-center bg-muted/50">
               <span className="whitespace-nowrap text-xs">#</span>
               <div
                 role="separator"
@@ -268,7 +236,7 @@ export function ResultsTable({
               return (
                 <TableHead
                   key={column.id}
-                  className="relative cursor-pointer select-none hover:bg-muted/50 transition-colors bg-muted/50 px-2.5 py-1.5"
+                  className="sticky top-0 z-10 cursor-pointer select-none hover:bg-muted/50 transition-colors bg-muted/50 px-2.5 py-1.5"
                   onClick={() => handleHeaderClick(column.id)}
                 >
                   <div className="flex items-center gap-1 pr-2">
@@ -291,7 +259,7 @@ export function ResultsTable({
                 </TableHead>
               )
             })}
-            <TableHead className="relative w-32 text-xs bg-muted/50">
+            <TableHead className="sticky top-0 z-10 w-32 text-xs bg-muted/50">
               Status
               <div
                 role="separator"
@@ -322,27 +290,18 @@ export function ResultsTable({
                 </TableCell>
                 {visibleCols.map((column) => {
                   const value = lead[column.id as keyof Lead] || ""
-                  const isEditing =
-                    editingCell?.rowId === lead.id && editingCell?.columnId === column.id
 
                   return (
                     <TableCell
                       key={column.id}
-                      className={`text-xs relative p-0 align-top ${!isEditing ? "cursor-text" : ""}`}
-                      onClick={() =>
-                        !isEditing && handleCellClick(lead.id, column.id, String(value))
-                      }
+                      className="text-xs relative p-0 align-top"
                       style={{ minWidth: 0, wordBreak: "break-word", overflowWrap: "break-word" }}
                     >
                       <MarkdownCell
                         value={String(value)}
-                        isEditing={isEditing}
-                        editValue={editValue}
-                        onEditChange={setEditValue}
-                        onBlur={handleCellBlur}
-                        onKeyDown={handleCellKeyDown}
-                        inputRef={inputRef}
-                        onClick={() => handleCellClick(lead.id, column.id, String(value))}
+                        onSave={(newValue) =>
+                          onUpdateLead(lead.id, column.id as keyof Lead, newValue)
+                        }
                         className="min-w-0"
                       />
                     </TableCell>

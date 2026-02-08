@@ -21,3 +21,11 @@ export interface TableColumnConfig {
   label: string;
   visible: boolean;
 }
+
+export interface SheetState {
+  id: string;
+  name: string;
+  leads: Lead[];
+  searchParams: SearchParams | null;
+  columns: TableColumnConfig[];
+}
