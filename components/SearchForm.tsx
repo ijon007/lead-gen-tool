@@ -14,15 +14,17 @@ import {
 } from "@/components/ui/select";
 import { searchPlacesAction } from "@/lib/actions";
 import { CATEGORIES } from "@/constants";
-import type { SearchParams } from "@/types";
+import type { Lead, SearchParams, TableColumnConfig } from "@/types";
 
 interface SearchFormProps {
-  onSearch: (params: SearchParams) => void;
+  columns: TableColumnConfig[];
+  onSearch: (params: SearchParams, leads?: Lead[]) => void;
   defaultCategory?: string;
   defaultLocation?: string;
 }
 
 export function SearchForm({
+  columns,
   onSearch,
   defaultCategory = "",
   defaultLocation = "",
@@ -30,6 +32,7 @@ export function SearchForm({
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
   const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<"search" | "enrich" | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,26 +40,48 @@ export function SearchForm({
 
     setLoading(true);
     try {
-      const result = await searchPlacesAction(category, location);
+      setLoadingStage("search");
+      const searchResult = await searchPlacesAction(category, location);
 
-      if ("leads" in result) {
-        const { leads } = result;
-        console.log(
-          "Search success:",
-          leads.length > 0 ? "Data fetched" : "No data",
-          leads
-        );
-        toast.success("Search completed successfully");
-        onSearch({ category, location });
-      } else {
-        console.error("Search failed:", result.error);
+      if ("error" in searchResult) {
+        console.error("Search failed:", searchResult.error);
         toast.error("Search failed. See console for details.");
+        return;
       }
+
+      const { leads } = searchResult;
+      console.log(
+        "Search success:",
+        leads.length > 0 ? "Data fetched" : "No data",
+        leads.length,
+        "leads"
+      );
+
+      setLoadingStage("enrich");
+      const enrichRes = await fetch("/api/ai-sdk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leads, columns }),
+      });
+
+      const enrichData = await enrichRes.json();
+
+      if (!enrichRes.ok) {
+        console.error("Enrichment failed:", enrichData.error);
+        toast.error(enrichData.error ?? "Enrichment failed. See console for details.");
+        onSearch({ category, location }, leads);
+        return;
+      }
+
+      const enrichedLeads = enrichData.leads ?? leads;
+      toast.success("Search and enrichment completed successfully");
+      onSearch({ category, location }, enrichedLeads);
     } catch (err) {
       console.error("Search failed:", err);
       toast.error("Search failed. See console for details.");
     } finally {
       setLoading(false);
+      setLoadingStage(null);
     }
   };
 
@@ -100,7 +125,11 @@ export function SearchForm({
         variant="default"
       >
         <MagnifyingGlass className="size-4" />
-        {loading ? "Searching..." : "Search"}
+        {loading
+          ? loadingStage === "enrich"
+            ? "Enriching with AI..."
+            : "Searching..."
+          : "Search"}
       </Button>
     </form>
   );

@@ -11,6 +11,7 @@ export interface Lead {
   status?: string;
   rating?: number;
   googleMapsUri?: string;
+  socialMedia?: string;
 }
 
 export interface SearchParams {

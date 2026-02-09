@@ -20,6 +20,7 @@ function placeToLead(place: PlaceResult, category: string, location: string): Le
     status: place.businessStatus ?? "",
     rating: place.rating,
     googleMapsUri: place.googleMapsUri,
+    socialMedia: "",
   };
 }
 

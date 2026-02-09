@@ -134,7 +134,7 @@ export default function Page() {
   );
 
   const handleSearch = useCallback(
-    (params: SearchParams) => {
+    (params: SearchParams, leads?: Lead[]) => {
       if (!activeSheet) {
         return;
       }
@@ -143,6 +143,7 @@ export default function Page() {
         [activeSheetId]: {
           ...prev[activeSheetId],
           searchParams: params,
+          ...(leads && { leads }),
         },
       }));
     },
@@ -273,7 +274,10 @@ export default function Page() {
                 onSave={(newName) => handleRenameSheet(activeSheetId, newName)}
               />
               <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
-                <SearchForm onSearch={handleSearch} />
+                <SearchForm
+                  columns={activeSheet.columns}
+                  onSearch={handleSearch}
+                />
                 <ExportButton
                   columns={activeSheet.columns}
                   leads={filteredLeads}
@@ -302,7 +306,10 @@ export default function Page() {
               Search for business leads by category and location
             </p>
             <div className="mx-auto max-w-lg">
-              <SearchForm onSearch={handleSearch} />
+              <SearchForm
+                columns={activeSheet.columns}
+                onSearch={handleSearch}
+              />
             </div>
           </div>
         )}

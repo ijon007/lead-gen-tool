@@ -1,3 +1,5 @@
+import { enrichLeads } from "@/lib/enrichLeads";
+import type { Lead, TableColumnConfig } from "@/types";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { convertToModelMessages, streamText } from "ai";
 import type { UIMessage } from "ai";
@@ -18,7 +20,27 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages } = (await req.json()) as { messages?: UIMessage[] };
+    const body = (await req.json()) as {
+      messages?: UIMessage[];
+      leads?: Lead[];
+      columns?: TableColumnConfig[];
+    };
+
+    // Enrichment: leads + columns -> AI-enriched leads
+    if (body.leads != null && body.columns != null) {
+      const leads = body.leads ?? [];
+      const columns = body.columns ?? [];
+      if (leads.length > 0) {
+        console.log("[api/ai-sdk] Enriching", leads.length, "leads with AI");
+        const enrichedLeads = await enrichLeads(leads, columns);
+        console.log("[api/ai-sdk] Enrichment complete. AI response (enriched leads):", JSON.stringify(enrichedLeads, null, 2));
+        return Response.json({ leads: enrichedLeads });
+      }
+      return Response.json({ leads: [] });
+    }
+
+    // Chat: messages -> streaming response
+    const { messages } = body;
     const modelId = process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL;
 
     const result = streamText({
