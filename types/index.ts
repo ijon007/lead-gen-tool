@@ -9,6 +9,8 @@ export interface Lead {
   address: string;
   description?: string;
   status?: string;
+  rating?: number;
+  googleMapsUri?: string;
 }
 
 export interface SearchParams {

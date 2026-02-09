@@ -2,6 +2,7 @@
 
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { searchPlacesAction } from "@/lib/actions";
 import { CATEGORIES } from "@/constants";
 import type { SearchParams } from "@/types";
 
@@ -27,11 +29,34 @@ export function SearchForm({
 }: SearchFormProps) {
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (category || location) {
-      onSearch({ category, location });
+    if (!(category || location)) return;
+
+    setLoading(true);
+    try {
+      const result = await searchPlacesAction(category, location);
+
+      if ("leads" in result) {
+        const { leads } = result;
+        console.log(
+          "Search success:",
+          leads.length > 0 ? "Data fetched" : "No data",
+          leads
+        );
+        toast.success("Search completed successfully");
+        onSearch({ category, location });
+      } else {
+        console.error("Search failed:", result.error);
+        toast.error("Search failed. See console for details.");
+      }
+    } catch (err) {
+      console.error("Search failed:", err);
+      toast.error("Search failed. See console for details.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,11 +95,12 @@ export function SearchForm({
 
       <Button
         className="w-full shrink-0 sm:w-auto"
+        disabled={loading}
         type="submit"
         variant="default"
       >
         <MagnifyingGlass className="size-4" />
-        Search
+        {loading ? "Searching..." : "Search"}
       </Button>
     </form>
   );
