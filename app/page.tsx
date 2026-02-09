@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { EditableTitle } from "@/components/EditableTitle";
 import { ExportButton } from "@/components/ExportButton";
 import { ResultsTable } from "@/components/ResultsTable";
@@ -35,7 +35,7 @@ function getDefaultSheet(): SheetState {
   return defaultSheetInstance;
 }
 
-export default function Page() {
+function PageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -315,5 +315,13 @@ export default function Page() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <PageContent />
+    </Suspense>
   );
 }
