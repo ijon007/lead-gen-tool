@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Columns } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { TableColumnConfig } from "@/types"
-import { Columns } from "@phosphor-icons/react"
+} from "@/components/ui/dropdown-menu";
+import type { TableColumnConfig } from "@/types";
 
 interface ColumnCustomizerProps {
-  columns: TableColumnConfig[]
-  onChange: (columns: TableColumnConfig[]) => void
+  columns: TableColumnConfig[];
+  onChange: (columns: TableColumnConfig[]) => void;
 }
 
 export function ColumnCustomizer({ columns, onChange }: ColumnCustomizerProps) {
   const handleToggle = (columnId: string) => {
     const updatedColumns = columns.map((col) =>
       col.id === columnId ? { ...col, visible: !col.visible } : col
-    )
-    onChange(updatedColumns)
-  }
+    );
+    onChange(updatedColumns);
+  };
 
   return (
     <DropdownMenu>
@@ -36,8 +36,8 @@ export function ColumnCustomizer({ columns, onChange }: ColumnCustomizerProps) {
       <DropdownMenuContent align="end" className="w-48">
         {columns.map((column) => (
           <DropdownMenuCheckboxItem
-            key={column.id}
             checked={column.visible}
+            key={column.id}
             onCheckedChange={() => handleToggle(column.id)}
           >
             {column.label}
@@ -45,5 +45,5 @@ export function ColumnCustomizer({ columns, onChange }: ColumnCustomizerProps) {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

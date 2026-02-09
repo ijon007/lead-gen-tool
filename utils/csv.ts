@@ -1,4 +1,4 @@
-import { Lead, TableColumnConfig } from "@/types";
+import type { Lead, TableColumnConfig } from "@/types";
 
 export function exportToCsv(leads: Lead[], columns: TableColumnConfig[]): void {
   if (leads.length === 0) {
@@ -14,7 +14,11 @@ export function exportToCsv(leads: Lead[], columns: TableColumnConfig[]): void {
       .map((col) => {
         const value = lead[col.id as keyof Lead] || "";
         const stringValue = String(value);
-        if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+        if (
+          stringValue.includes(",") ||
+          stringValue.includes('"') ||
+          stringValue.includes("\n")
+        ) {
           return `"${stringValue.replace(/"/g, '""')}"`;
         }
         return stringValue;
@@ -29,7 +33,10 @@ export function exportToCsv(leads: Lead[], columns: TableColumnConfig[]): void {
   const url = URL.createObjectURL(blob);
 
   link.setAttribute("href", url);
-  link.setAttribute("download", `leads-${new Date().toISOString().split("T")[0]}.csv`);
+  link.setAttribute(
+    "download",
+    `leads-${new Date().toISOString().split("T")[0]}.csv`
+  );
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();

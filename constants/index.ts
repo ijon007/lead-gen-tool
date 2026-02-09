@@ -1,4 +1,4 @@
-import { Lead, TableColumnConfig } from "@/types";
+import type { Lead, TableColumnConfig } from "@/types";
 
 export const LEAD_STATUSES = [
   { value: "rejected", label: "Rejected" },
