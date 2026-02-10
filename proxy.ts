@@ -1,6 +1,16 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export default clerkMiddleware();
+const isLeadsRoute = createRouteMatcher(['/leads', '/leads(.*)']);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isLeadsRoute(req)) {
+    const { isAuthenticated } = await auth();
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+});
 
 export const config = {
   matcher: [

@@ -20,6 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { LEAD_STATUSES } from "@/constants";
 import type { Lead, TableColumnConfig } from "@/types";
 import {
@@ -43,9 +46,7 @@ const DEFAULT_ROW_HEIGHT = 40;
 interface ResultsTableProps {
   leads: Lead[];
   visibleColumns: TableColumnConfig[];
-  onUpdateLead: (id: string, field: keyof Lead, value: string) => void;
-  onUpdateStatus: (id: string, status: string) => void;
-  onColumnsChange?: (columns: TableColumnConfig[]) => void;
+  sheetId: string;
 }
 
 type SortDirection = "asc" | "desc" | null;
@@ -108,10 +109,25 @@ function getColumnKey(col: TableColumnConfig | "index" | "status"): string {
 export function ResultsTable({
   leads,
   visibleColumns,
-  onUpdateLead,
-  onUpdateStatus,
-  onColumnsChange,
+  sheetId,
 }: ResultsTableProps) {
+  const updateLead = useMutation(api.leads.update);
+  const updateSheet = useMutation(api.sheets.update);
+
+  async function onUpdateLead(id: string, field: keyof Lead, value: string) {
+    const updates: Record<string, string | number | undefined> = {};
+    updates[field] = value;
+    await updateLead({ leadId: id as Id<"leads">, ...updates });
+  }
+
+  async function onUpdateStatus(id: string, status: string) {
+    await updateLead({ leadId: id as Id<"leads">, status });
+  }
+
+  async function onColumnsChange(columns: TableColumnConfig[]) {
+    await updateSheet({ sheetId: sheetId as Id<"sheets">, columns });
+  }
+
   const visibleCols = visibleColumns.filter((col) => col.visible);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -339,7 +355,7 @@ export function ResultsTable({
               </div>
             </TableHead>
             <TableHead className="sticky top-0 right-0 z-30 w-8 border-border border-l bg-muted p-0">
-              {onColumnsChange && mounted ? (
+              {mounted ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
@@ -371,11 +387,11 @@ export function ResultsTable({
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : onColumnsChange ? (
+              ) : (
                 <span className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <Plus className="size-4" />
                 </span>
-              ) : null}
+              )}
             </TableHead>
           </TableRow>
         </TableHeader>

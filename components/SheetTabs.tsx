@@ -1,7 +1,11 @@
 "use client";
 
 import { Copy, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
@@ -9,18 +13,19 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { DEFAULT_TABLE_COLUMNS } from "@/constants";
 import { cn } from "@/lib/utils";
-import type { SheetState } from "@/types";
+import type { Doc } from "@/convex/_generated/dataModel";
+
+interface SheetTabItem {
+  id: string;
+  name: string;
+}
 
 interface SheetTabsProps {
-  sheets: Record<string, SheetState>;
-  sheetOrder: string[];
+  sheets: Doc<"sheets">[];
   activeSheetId: string;
-  onSelectSheet: (id: string) => void;
-  onAddSheet: () => void;
-  onRenameSheet?: (id: string, name: string) => void;
-  onDuplicateSheet?: (id: string) => void;
-  onDeleteSheet?: (id: string) => void;
+  onRenameSheet: (id: string, name: string) => void;
 }
 
 const TAB_MIN_W = 100;
@@ -28,26 +33,87 @@ const TAB_MAX_W = 160;
 
 export function SheetTabs({
   sheets,
-  sheetOrder,
   activeSheetId,
-  onSelectSheet,
-  onAddSheet,
   onRenameSheet,
-  onDuplicateSheet,
-  onDeleteSheet,
 }: SheetTabsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const allLeads = useQuery(api.leads.listByUser);
+  const createSheet = useMutation(api.sheets.create);
+  const deleteSheet = useMutation(api.sheets.remove);
+  const createBatchLeads = useMutation(api.leads.createBatch);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const startEditing = useCallback(
-    (sheet: SheetState) => {
-      if (!onRenameSheet) {
-        return;
-      }
-      setEditingId(sheet.id);
-    },
-    [onRenameSheet]
-  );
+  const sheetsRecord = useMemo(() => {
+    const record: Record<string, SheetTabItem> = {};
+    for (const sheet of sheets) {
+      record[sheet._id] = { id: sheet._id, name: sheet.name };
+    }
+    return record;
+  }, [sheets]);
+
+  const sheetOrder = useMemo(() => sheets.map((s) => s._id), [sheets]);
+
+  function onSelectSheet(id: string) {
+    router.replace(`${pathname}?sheet=${id}`);
+  }
+
+  async function onAddSheet() {
+    const sheetId = await createSheet({
+      name: `Generation ${sheets.length + 1}`,
+      searchParams: null,
+      columns: DEFAULT_TABLE_COLUMNS,
+    });
+    router.replace(`${pathname}?sheet=${sheetId}`);
+  }
+
+  async function onDuplicateSheet(id: string) {
+    const source = sheets.find((s) => s._id === id);
+    if (!source || !allLeads) return;
+    const sourceLeads = allLeads.filter((l) => l.sheetId === id);
+    const newSheetId = await createSheet({
+      name: `${source.name} (copy)`,
+      searchParams: source.searchParams,
+      columns: source.columns,
+    });
+    if (sourceLeads.length > 0) {
+      const leadsToInsert = sourceLeads.map((lead) => {
+        const { _id, _creationTime, sheetId, userId, ...rest } = lead;
+        return rest;
+      });
+      await createBatchLeads({ sheetId: newSheetId, leads: leadsToInsert });
+    }
+    router.replace(`${pathname}?sheet=${newSheetId}`);
+  }
+
+  async function onDeleteSheet(id: string) {
+    if (sheets.length <= 1) return;
+    await deleteSheet({ sheetId: id as Id<"sheets"> });
+    const remaining = sheets.filter((s) => s._id !== id);
+    if (activeSheetId === id && remaining[0]) {
+      router.replace(`${pathname}?sheet=${remaining[0]._id}`);
+    }
+  }
+
+  function startEditing(sheet: SheetTabItem) {
+    setEditingId(sheet.id);
+  }
+
+  function handleDoubleClick(sheet: SheetTabItem) {
+    setEditingId(sheet.id);
+  }
+
+  function handleRenameSubmit(id: string) {
+    const value = inputRef.current?.value?.trim();
+    if (value) onRenameSheet(id, value);
+    setEditingId(null);
+  }
+
+  function handleRenameCancel() {
+    setEditingId(null);
+  }
 
   useEffect(() => {
     if (editingId) {
@@ -58,31 +124,7 @@ export function SheetTabs({
     }
   }, [editingId]);
 
-  const handleDoubleClick = useCallback(
-    (sheet: SheetState) => {
-      if (onRenameSheet) {
-        setEditingId(sheet.id);
-      }
-    },
-    [onRenameSheet]
-  );
-
-  const handleRenameSubmit = useCallback(
-    (id: string) => {
-      const value = inputRef.current?.value?.trim();
-      if (onRenameSheet && value) {
-        onRenameSheet(id, value);
-      }
-      setEditingId(null);
-    },
-    [onRenameSheet]
-  );
-
-  const handleRenameCancel = useCallback(() => {
-    setEditingId(null);
-  }, []);
-
-  const orderedSheets = sheetOrder.map((id) => sheets[id]).filter(Boolean);
+  const orderedSheets = sheetOrder.map((id) => sheetsRecord[id]).filter(Boolean);
 
   return (
     <div className="mb-4 flex items-end gap-0 border-border border-b">
@@ -152,20 +194,19 @@ export function SheetTabs({
                   Edit
                 </ContextMenuItem>
                 <ContextMenuItem
-                  disabled={!onDuplicateSheet}
                   onClick={(e) => {
                     e.preventDefault();
-                    onDuplicateSheet?.(sheet.id);
+                    onDuplicateSheet(sheet.id);
                   }}
                 >
                   <Copy className="size-3.5" />
                   Duplicate
                 </ContextMenuItem>
                 <ContextMenuItem
-                  disabled={!onDeleteSheet || orderedSheets.length <= 1}
+                  disabled={orderedSheets.length <= 1}
                   onClick={(e) => {
                     e.preventDefault();
-                    onDeleteSheet?.(sheet.id);
+                    onDeleteSheet(sheet.id);
                   }}
                   variant="destructive"
                 >

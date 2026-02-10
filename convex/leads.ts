@@ -6,16 +6,24 @@ export const listBySheet = query({
   args: { sheetId: v.id("sheets") },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    
-    // Verify sheet belongs to user
     const sheet = await ctx.db.get(args.sheetId);
     if (!sheet) throw new Error("Sheet not found");
     if (sheet.userId !== user._id) throw new Error("Unauthorized");
-
     return await ctx.db
       .query("leads")
       .withIndex("by_sheet", (q) => q.eq("sheetId", args.sheetId))
       .order("desc")
+      .collect();
+  },
+});
+
+export const listByUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    return await ctx.db
+      .query("leads")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
   },
 });
