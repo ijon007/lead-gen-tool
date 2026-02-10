@@ -17,11 +17,8 @@ export function MarkdownCell({ value, onSave, className }: MarkdownCellProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (isEditing) {
-      setLocalValue(value);
-      textareaRef.current?.focus();
-    }
-  }, [isEditing, value]);
+    if (isEditing) textareaRef.current?.focus();
+  }, [isEditing]);
 
   const handleSave = () => {
     const trimmed = localValue.trim();
@@ -70,7 +67,10 @@ export function MarkdownCell({ value, onSave, className }: MarkdownCellProps) {
           "flex min-h-8 items-center px-2.5 py-1.5 text-muted-foreground",
           className
         )}
-        onClick={() => setIsEditing(true)}
+        onClick={() => {
+          setLocalValue(value);
+          setIsEditing(true);
+        }}
       >
         <span className="text-muted-foreground/60">Click to edit...</span>
       </div>
@@ -83,7 +83,10 @@ export function MarkdownCell({ value, onSave, className }: MarkdownCellProps) {
         "markdown-cell min-h-8 cursor-text px-2.5 py-1.5",
         className
       )}
-      onClick={() => setIsEditing(true)}
+      onClick={() => {
+        setLocalValue(value);
+        setIsEditing(true);
+      }}
     >
       <ReactMarkdown
         components={{

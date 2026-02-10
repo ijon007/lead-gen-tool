@@ -143,8 +143,11 @@ export function ResultsTable({
     return w;
   }, [visibleCols]);
 
-  const [columnWidths, setColumnWidths] =
-    useState<Record<string, number>>(initialColumnWidths);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const effectiveColumnWidths = useMemo(
+    () => ({ ...initialColumnWidths, ...columnWidths }),
+    [initialColumnWidths, columnWidths]
+  );
   const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -153,35 +156,8 @@ export function ResultsTable({
   const [resizingRow, setResizingRow] = useState<string | null>(null);
   const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
-  const visibleColumnIds = useMemo(
-    () =>
-      visibleColumns
-        .filter((c) => c.visible)
-        .map((c) => c.id)
-        .sort()
-        .join(","),
-    [visibleColumns]
-  );
-
   useEffect(() => {
-    setColumnWidths((prev) => {
-      const next = { ...prev };
-      next[COL_INDEX] = prev[COL_INDEX] ?? DEFAULT_INDEX_WIDTH;
-      next[COL_STATUS] = prev[COL_STATUS] ?? DEFAULT_STATUS_WIDTH;
-      visibleCols.forEach((c) => {
-        const k = getColumnKey(c);
-        if (next[k] == null) {
-          next[k] = DEFAULT_COL_WIDTH;
-        }
-      });
-      return next;
-    });
-  }, [visibleColumnIds]);
-
-  useEffect(() => {
-    if (!resizingColumn) {
-      return;
-    }
+    if (!resizingColumn) return;
     const onMove = (e: MouseEvent) => {
       const w = Math.max(
         MIN_COL_WIDTH,
@@ -283,14 +259,14 @@ export function ResultsTable({
         wrapperClassName="overflow-auto max-h-[calc(100vh-12rem)] scrollbar-thin"
       >
         <colgroup className="border-b">
-          <col style={{ width: columnWidths[COL_INDEX] }} />
+          <col style={{ width: effectiveColumnWidths[COL_INDEX] }} />
           {visibleCols.map((col) => (
             <col
               key={col.id}
-              style={{ width: columnWidths[getColumnKey(col)] }}
+              style={{ width: effectiveColumnWidths[getColumnKey(col)] }}
             />
           ))}
-          <col style={{ width: columnWidths[COL_STATUS] }} />
+          <col style={{ width: effectiveColumnWidths[COL_STATUS] }} />
           <col style={{ width: DEFAULT_ADD_WIDTH }} />
         </colgroup>
         <TableHeader className="sticky-table-header z-20 bg-muted [&>tr]:bg-muted">
@@ -302,7 +278,7 @@ export function ResultsTable({
                 className="group absolute top-0 right-0 bottom-0 flex w-1.5 cursor-col-resize touch-none items-center justify-center border-transparent border-r hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
                 onMouseDown={startColumnResize(
                   COL_INDEX,
-                  columnWidths[COL_INDEX]
+                  effectiveColumnWidths[COL_INDEX]
                 )}
                 role="separator"
               >
@@ -332,7 +308,7 @@ export function ResultsTable({
                   <div
                     aria-orientation="vertical"
                     className="group absolute top-0 right-0 bottom-0 flex w-1.5 cursor-col-resize touch-none items-center justify-center border-transparent border-r hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
-                    onMouseDown={startColumnResize(key, columnWidths[key])}
+                    onMouseDown={startColumnResize(key, effectiveColumnWidths[key])}
                     role="separator"
                   >
                     <span className="h-4 w-0.5 rounded-full bg-muted-foreground/40 transition-colors group-hover:bg-primary/70" />
@@ -347,7 +323,7 @@ export function ResultsTable({
                 className="group absolute top-0 right-0 bottom-0 flex w-1.5 cursor-col-resize touch-none items-center justify-center border-transparent border-r hover:border-primary/40 hover:bg-primary/10 active:bg-primary/20"
                 onMouseDown={startColumnResize(
                   COL_STATUS,
-                  columnWidths[COL_STATUS]
+                  effectiveColumnWidths[COL_STATUS]
                 )}
                 role="separator"
               >

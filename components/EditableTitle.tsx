@@ -15,11 +15,8 @@ export function EditableTitle({ name, onSave }: EditableTitleProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing) {
-      setLocalValue(name);
-      inputRef.current?.focus();
-    }
-  }, [isEditing, name]);
+    if (isEditing) inputRef.current?.focus();
+  }, [isEditing]);
 
   const handleSave = () => {
     const trimmed = localValue.trim();
@@ -61,7 +58,10 @@ export function EditableTitle({ name, onSave }: EditableTitleProps) {
     <div className="flex min-w-0 items-center gap-2">
       <h1 className="truncate font-bold text-2xl text-foreground">{name}</h1>
       <Button
-        onClick={() => setIsEditing(true)}
+        onClick={() => {
+          setLocalValue(name);
+          setIsEditing(true);
+        }}
         size="icon"
         title="Rename"
         variant="ghost"
