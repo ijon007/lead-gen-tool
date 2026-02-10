@@ -21,6 +21,7 @@ export interface Lead {
 export interface SearchParams {
   category: string;
   location: string;
+  limit?: number;
 }
 
 export interface TableColumnConfig {

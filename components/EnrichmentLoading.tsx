@@ -36,11 +36,11 @@ export function EnrichmentLoading({ stage = "search" }: EnrichmentLoadingProps) 
   }, [messages.length]);
 
   return (
-    <div className="fade-in-0 slide-in-from-top-4 animate-in relative duration-300">
-      <div className="rounded-md border">
-        <div className="overflow-hidden">
+    <div className="fade-in-0 slide-in-from-top-4 animate-in relative flex h-[90vh] max-h-[90vh] w-full items-center justify-center overflow-hidden duration-300">
+      <div className="h-full w-[90%] rounded-md border">
+        <div className="flex h-full flex-col overflow-hidden">
           {/* Skeleton header */}
-          <div className="border-b bg-muted/50 px-2.5 py-1.5">
+          <div className="flex h-12 items-center border-b bg-muted/50 px-2.5">
             <div className="flex gap-4">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
@@ -52,8 +52,8 @@ export function EnrichmentLoading({ stage = "search" }: EnrichmentLoadingProps) 
             </div>
           </div>
           {/* Skeleton rows */}
-          <div className="divide-y">
-            {[1, 2, 3, 4, 5, 6, 7].map((row) => (
+          <div className="flex-1 divide-y overflow-hidden">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((row) => (
               <div
                 key={row}
                 className="flex items-center gap-4 px-2.5 py-3"
@@ -78,7 +78,7 @@ export function EnrichmentLoading({ stage = "search" }: EnrichmentLoadingProps) 
         </div>
       </div>
 
-      {/* Overlay card - centered on table, square, high z-index */}
+      {/* Overlay card - centered on table, original size */}
       <div
         className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center"
         aria-live="polite"

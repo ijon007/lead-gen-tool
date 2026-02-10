@@ -127,7 +127,7 @@ export function SheetTabs({
   const orderedSheets = sheetOrder.map((id) => sheetsRecord[id]).filter(Boolean);
 
   return (
-    <div className="mb-4 flex items-end gap-0 border-border border-b">
+    <div className="flex items-end gap-0 border-border border-b">
       <div className="scrollbar-thin flex items-end overflow-x-auto">
         {orderedSheets.map((sheet) => {
           const isActive = sheet.id === activeSheetId;

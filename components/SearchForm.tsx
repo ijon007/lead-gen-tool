@@ -1,7 +1,7 @@
 "use client";
 
 import { MagnifyingGlass } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ interface SearchFormProps {
   onLoadingStageChange?: (stage: LoadingStage) => void;
   defaultCategory?: string;
   defaultLocation?: string;
+  defaultLimit?: number;
 }
 
 export function SearchForm({
@@ -35,11 +36,17 @@ export function SearchForm({
   onLoadingStageChange,
   defaultCategory = "",
   defaultLocation = "",
+  defaultLimit = 10,
 }: SearchFormProps) {
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
+  const [limit, setLimit] = useState(defaultLimit);
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
+
+  useEffect(() => {
+    setLimit(defaultLimit);
+  }, [defaultLimit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +57,8 @@ export function SearchForm({
     try {
       setLoadingStage("search");
       onLoadingStageChange?.("search");
-      console.log("[SearchForm] Stage: fetching places data", { category, location });
-      const searchResult = await searchPlacesAction(category, location);
+      console.log("[SearchForm] Stage: fetching places data", { category, location, limit });
+      const searchResult = await searchPlacesAction(category, location, limit);
 
       if ("error" in searchResult) {
         console.error("[SearchForm] Search failed:", searchResult.error);
@@ -80,14 +87,14 @@ export function SearchForm({
       if (!enrichRes.ok) {
         console.error("Enrichment failed:", enrichData.error);
         toast.error(enrichData.error ?? "Enrichment failed. See console for details.");
-        onSearch({ category, location }, leads);
+        onSearch({ category, location, limit }, leads);
         return;
       }
 
       const enrichedLeads = enrichData.leads ?? leads;
       console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, "enriched leads");
       toast.success("Search and enrichment completed successfully");
-      onSearch({ category, location }, enrichedLeads);
+      onSearch({ category, location, limit }, enrichedLeads);
     } catch (err) {
       console.error("[SearchForm] Search failed:", err);
       toast.error("Search failed. See console for details.");
@@ -137,6 +144,26 @@ export function SearchForm({
           placeholder="Enter location"
           type="text"
           value={location}
+        />
+      </div>
+
+      <div className="flex min-w-0 items-center">
+        <Input
+          className="w-24"
+          id="limit"
+          max={50}
+          min={1}
+          onChange={(e) => {
+            const value = parseInt(e.target.value, 10);
+            if (!isNaN(value) && value >= 1 && value <= 50) {
+              setLimit(value);
+            } else if (e.target.value === "") {
+              setLimit(10);
+            }
+          }}
+          placeholder="Leads"
+          type="number"
+          value={limit}
         />
       </div>
 

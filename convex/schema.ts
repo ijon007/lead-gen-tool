@@ -16,6 +16,7 @@ export default defineSchema({
       v.object({
         category: v.string(),
         location: v.string(),
+        limit: v.optional(v.number()),
       })
     ),
     columns: v.array(

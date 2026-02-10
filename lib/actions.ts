@@ -6,18 +6,20 @@ import type { Lead, TableColumnConfig } from "@/types";
 
 export async function searchPlacesAction(
   category: string,
-  location: string
+  location: string,
+  limit?: number
 ): Promise<{ leads: Lead[] } | { error: string }> {
   const cat = category?.trim() ?? "";
   const loc = location?.trim() ?? "";
+  const searchLimit = limit ?? 10;
 
   if (!cat && !loc) {
     return { error: "Category and location cannot both be empty" };
   }
 
   try {
-    console.log("[searchPlacesAction] Starting search", { category: cat, location: loc });
-    const leads = await searchPlaces(cat, loc);
+    console.log("[searchPlacesAction] Starting search", { category: cat, location: loc, limit: searchLimit });
+    const leads = await searchPlaces(cat, loc, searchLimit);
     console.log("[searchPlacesAction] Search complete", leads.length, "leads");
     return { leads };
   } catch (err) {

@@ -35,6 +35,7 @@ export const create = mutation({
       v.object({
         category: v.string(),
         location: v.string(),
+        limit: v.optional(v.number()),
       })
     ),
     columns: v.array(
@@ -69,6 +70,7 @@ export const update = mutation({
         v.object({
           category: v.string(),
           location: v.string(),
+          limit: v.optional(v.number()),
         })
       )
     ),

@@ -45,7 +45,8 @@ function placeToLead(place: PlaceResult, category: string, location: string): Le
 
 export async function searchPlaces(
   category: string,
-  location: string
+  location: string,
+  limit?: number
 ): Promise<Lead[]> {
   const apiKey =
     process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_CLOUD_API_KEY;
@@ -58,7 +59,8 @@ export async function searchPlaces(
     throw new Error("Category and location cannot both be empty");
   }
 
-  console.log("[placesClient] Fetching places", { textQuery, category, location });
+  const pageSize = limit ?? SEARCH_RESULT_LIMIT;
+  console.log("[placesClient] Fetching places", { textQuery, category, location, pageSize });
   const res = await fetch(PLACES_API_URL, {
     method: "POST",
     headers: {
@@ -69,7 +71,7 @@ export async function searchPlaces(
     body: JSON.stringify({
       textQuery,
       languageCode: "en",
-      pageSize: SEARCH_RESULT_LIMIT,
+      pageSize,
     }),
   });
 

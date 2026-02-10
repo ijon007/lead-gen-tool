@@ -117,7 +117,8 @@ function PageContent() {
       setLoadingStage("search");
       const searchResult = await searchPlacesAction(
         params.category,
-        params.location
+        params.location,
+        params.limit
       );
       if ("error" in searchResult) {
         console.error("Search error:", searchResult.error);
@@ -168,14 +169,15 @@ function PageContent() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-2 transition-all duration-300 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl transition-all duration-300">
-        <SheetTabs
-          activeSheetId={activeSheetId ?? ""}
-          onRenameSheet={handleRenameSheet}
-          sheets={sheets}
-        />
-        {hasSearched && (
+    <div className={`min-h-screen transition-all duration-300 ${isSearching ? 'overflow-hidden h-screen' : ''}`}>
+      <SheetTabs
+        activeSheetId={activeSheetId ?? ""}
+        onRenameSheet={handleRenameSheet}
+        sheets={sheets}
+      />
+      <div className="px-4 py-2 transition-all duration-300 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl transition-all duration-300">
+          {hasSearched && (
           <header className="mb-6 transition-all duration-300">
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
               <EditableTitle
@@ -190,6 +192,7 @@ function PageContent() {
                   columns={activeSheet.columns}
                   defaultCategory={activeSheet.searchParams?.category || ""}
                   defaultLocation={activeSheet.searchParams?.location || ""}
+                  defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
                   onLoadingChange={setIsSearching}
                   onLoadingStageChange={setLoadingStage}
                   onSearch={handleSearch}
@@ -204,7 +207,7 @@ function PageContent() {
         )}
 
         {isSearching ? (
-          <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
+          <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
             <EnrichmentLoading stage={loadingStage} />
           </main>
         ) : hasSearched ? (
@@ -233,6 +236,7 @@ function PageContent() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
