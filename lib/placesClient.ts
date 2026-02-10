@@ -6,8 +6,22 @@ const PLACES_API_URL = "https://places.googleapis.com/v1/places:searchText";
 const FIELD_MASK =
   "places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.websiteUri,places.rating,places.googleMapsUri,places.businessStatus";
 
+function mapBusinessStatusToLeadStatus(businessStatus?: string): string {
+  if (!businessStatus) return "open";
+  switch (businessStatus) {
+    case "OPERATIONAL":
+      return "open";
+    case "CLOSED_TEMPORARILY":
+    case "CLOSED_PERMANENTLY":
+      return "closed";
+    default:
+      return "open";
+  }
+}
+
 function placeToLead(place: PlaceResult, category: string, location: string): Lead {
   const id = place.id?.replace(/^places\//, "") ?? crypto.randomUUID();
+  const website = place.websiteUri ?? "";
   return {
     id,
     businessName: place.displayName?.text ?? "",
@@ -15,9 +29,10 @@ function placeToLead(place: PlaceResult, category: string, location: string): Le
     location,
     email: "",
     phone: place.internationalPhoneNumber ?? "",
-    website: place.websiteUri ?? "",
+    website,
     address: place.formattedAddress ?? "",
-    status: place.businessStatus ?? "",
+    description: undefined,
+    status: mapBusinessStatusToLeadStatus(place.businessStatus),
     rating: place.rating,
     googleMapsUri: place.googleMapsUri,
     socialMedia: "",

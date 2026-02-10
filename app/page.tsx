@@ -3,11 +3,12 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { EditableTitle } from "@/components/EditableTitle";
+import { EnrichmentLoading } from "@/components/EnrichmentLoading";
 import { ExportButton } from "@/components/ExportButton";
 import { ResultsTable } from "@/components/ResultsTable";
 import { SearchForm } from "@/components/SearchForm";
 import { SheetTabs } from "@/components/SheetTabs";
-import { DEFAULT_TABLE_COLUMNS, MOCK_LEADS } from "@/constants";
+import { DEFAULT_TABLE_COLUMNS } from "@/constants";
 import type {
   Lead,
   SearchParams,
@@ -20,7 +21,7 @@ function createDefaultSheet(): SheetState {
   return {
     id,
     name: "Generation 1",
-    leads: MOCK_LEADS,
+    leads: [],
     searchParams: null,
     columns: DEFAULT_TABLE_COLUMNS,
   };
@@ -49,6 +50,7 @@ function PageContent() {
     const defaultSheet = getDefaultSheet();
     return [defaultSheet.id];
   });
+  const [isSearching, setIsSearching] = useState(false);
   // Get active sheet ID from URL, fallback to first sheet
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -276,6 +278,7 @@ function PageContent() {
               <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
                 <SearchForm
                   columns={activeSheet.columns}
+                  onLoadingChange={setIsSearching}
                   onSearch={handleSearch}
                 />
                 <ExportButton
@@ -287,7 +290,11 @@ function PageContent() {
           </header>
         )}
 
-        {hasSearched ? (
+        {isSearching ? (
+          <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
+            <EnrichmentLoading />
+          </main>
+        ) : hasSearched ? (
           <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
             <ResultsTable
               leads={filteredLeads}
@@ -308,6 +315,7 @@ function PageContent() {
             <div className="mx-auto max-w-lg">
               <SearchForm
                 columns={activeSheet.columns}
+                onLoadingChange={setIsSearching}
                 onSearch={handleSearch}
               />
             </div>

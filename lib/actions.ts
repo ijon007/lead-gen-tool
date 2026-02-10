@@ -1,8 +1,7 @@
 "use server";
 
-import { MOCK_LEADS } from "@/constants";
 import { enrichLeads } from "@/lib/enrichLeads";
-// import { searchPlaces } from "@/lib/placesClient";
+import { searchPlaces } from "@/lib/placesClient";
 import type { Lead, TableColumnConfig } from "@/types";
 
 export async function searchPlacesAction(
@@ -17,9 +16,7 @@ export async function searchPlacesAction(
   }
 
   try {
-    // TODO: Uncomment when Places API is configured
-    // const leads = await searchPlaces(cat, loc);
-    const leads = MOCK_LEADS;
+    const leads = await searchPlaces(cat, loc);
     return { leads };
   } catch (err) {
     const message =

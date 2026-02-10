@@ -400,7 +400,8 @@ export function ResultsTable({
                   </div>
                 </TableCell>
                 {visibleCols.map((column) => {
-                  const value = lead[column.id as keyof Lead] || "";
+                  const raw = lead[column.id as keyof Lead];
+                  const value = raw !== undefined && raw !== null ? String(raw) : "";
 
                   return (
                     <TableCell
@@ -421,7 +422,7 @@ export function ResultsTable({
                             newValue
                           )
                         }
-                        value={String(value)}
+                        value={value}
                       />
                     </TableCell>
                   );

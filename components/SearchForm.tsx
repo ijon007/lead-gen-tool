@@ -19,6 +19,7 @@ import type { Lead, SearchParams, TableColumnConfig } from "@/types";
 interface SearchFormProps {
   columns: TableColumnConfig[];
   onSearch: (params: SearchParams, leads?: Lead[]) => void;
+  onLoadingChange?: (loading: boolean) => void;
   defaultCategory?: string;
   defaultLocation?: string;
 }
@@ -26,6 +27,7 @@ interface SearchFormProps {
 export function SearchForm({
   columns,
   onSearch,
+  onLoadingChange,
   defaultCategory = "",
   defaultLocation = "",
 }: SearchFormProps) {
@@ -39,6 +41,7 @@ export function SearchForm({
     if (!(category || location)) return;
 
     setLoading(true);
+    onLoadingChange?.(true);
     try {
       setLoadingStage("search");
       const searchResult = await searchPlacesAction(category, location);
@@ -82,6 +85,7 @@ export function SearchForm({
     } finally {
       setLoading(false);
       setLoadingStage(null);
+      onLoadingChange?.(false);
     }
   };
 
