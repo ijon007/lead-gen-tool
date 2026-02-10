@@ -1,20 +1,16 @@
 import { enrichLeads } from "@/lib/enrichLeads";
 import type { Lead, TableColumnConfig } from "@/types";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { google } from "@ai-sdk/google";
 import { convertToModelMessages, streamText } from "ai";
 import type { UIMessage } from "ai";
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
-const DEFAULT_MODEL = "anthropic/claude-3.5-sonnet";
+const DEFAULT_MODEL = "gemini-3-flash";
 
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) {
     return new Response(
-      JSON.stringify({ error: "OPENROUTER_API_KEY is not configured" }),
+      JSON.stringify({ error: "GOOGLE_GENERATIVE_AI_API_KEY is not configured" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -41,10 +37,10 @@ export async function POST(req: Request) {
 
     // Chat: messages -> streaming response
     const { messages } = body;
-    const modelId = process.env.OPENROUTER_MODEL ?? DEFAULT_MODEL;
+    const modelId = process.env.GOOGLE_GENERATIVE_AI_MODEL ?? DEFAULT_MODEL;
 
     const result = streamText({
-      model: openrouter.chat(modelId),
+      model: google(modelId),
       messages: await convertToModelMessages(messages ?? []),
     });
 
