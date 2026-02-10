@@ -15,11 +15,13 @@ export type CategoryItem = { value: string; label: string };
 
 export const CATEGORIES: CategoryItem[] = [
   { value: "restaurant", label: "Restaurant" },
-  { value: "retail", label: "Retail" },
-  { value: "healthcare", label: "Healthcare" },
+  { value: "cafe", label: "Cafe" },
+  { value: "hotel", label: "Hotel" },
+  { value: "guest-house", label: "Guest House" },
+  { value: "apartment", label: "Apartment" },
+  { value: "residential", label: "Residential" },
   { value: "technology", label: "Technology" },
   { value: "real-estate", label: "Real Estate" },
-  { value: "education", label: "Education" },
   { value: "finance", label: "Finance" },
   { value: "hospitality", label: "Hospitality" },
   { value: "automotive", label: "Automotive" },

@@ -1,0 +1,199 @@
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+import { getCurrentUser } from "./lib/auth";
+
+export const listBySheet = query({
+  args: { sheetId: v.id("sheets") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    
+    // Verify sheet belongs to user
+    const sheet = await ctx.db.get(args.sheetId);
+    if (!sheet) throw new Error("Sheet not found");
+    if (sheet.userId !== user._id) throw new Error("Unauthorized");
+
+    return await ctx.db
+      .query("leads")
+      .withIndex("by_sheet", (q) => q.eq("sheetId", args.sheetId))
+      .order("desc")
+      .collect();
+  },
+});
+
+export const create = mutation({
+  args: {
+    sheetId: v.id("sheets"),
+    businessName: v.string(),
+    category: v.string(),
+    location: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    website: v.string(),
+    address: v.string(),
+    description: v.optional(v.string()),
+    status: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    googleMapsUri: v.optional(v.string()),
+    instagram: v.optional(v.string()),
+    facebook: v.optional(v.string()),
+    linkedIn: v.optional(v.string()),
+    x: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    
+    // Verify sheet belongs to user
+    const sheet = await ctx.db.get(args.sheetId);
+    if (!sheet) throw new Error("Sheet not found");
+    if (sheet.userId !== user._id) throw new Error("Unauthorized");
+
+    return await ctx.db.insert("leads", {
+      sheetId: args.sheetId,
+      userId: user._id,
+      businessName: args.businessName,
+      category: args.category,
+      location: args.location,
+      email: args.email,
+      phone: args.phone,
+      website: args.website,
+      address: args.address,
+      description: args.description,
+      status: args.status,
+      rating: args.rating,
+      googleMapsUri: args.googleMapsUri,
+      instagram: args.instagram,
+      facebook: args.facebook,
+      linkedIn: args.linkedIn,
+      x: args.x,
+      notes: args.notes,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const createBatch = mutation({
+  args: {
+    sheetId: v.id("sheets"),
+    leads: v.array(
+      v.object({
+        businessName: v.string(),
+        category: v.string(),
+        location: v.string(),
+        email: v.string(),
+        phone: v.string(),
+        website: v.string(),
+        address: v.string(),
+        description: v.optional(v.string()),
+        status: v.optional(v.string()),
+        rating: v.optional(v.number()),
+        googleMapsUri: v.optional(v.string()),
+        instagram: v.optional(v.string()),
+        facebook: v.optional(v.string()),
+        linkedIn: v.optional(v.string()),
+        x: v.optional(v.string()),
+        notes: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    
+    // Verify sheet belongs to user
+    const sheet = await ctx.db.get(args.sheetId);
+    if (!sheet) throw new Error("Sheet not found");
+    if (sheet.userId !== user._id) throw new Error("Unauthorized");
+
+    const now = Date.now();
+    const leadIds = [];
+    
+    for (const lead of args.leads) {
+      const id = await ctx.db.insert("leads", {
+        sheetId: args.sheetId,
+        userId: user._id,
+        businessName: lead.businessName,
+        category: lead.category,
+        location: lead.location,
+        email: lead.email,
+        phone: lead.phone,
+        website: lead.website,
+        address: lead.address,
+        description: lead.description,
+        status: lead.status,
+        rating: lead.rating,
+        googleMapsUri: lead.googleMapsUri,
+        instagram: lead.instagram,
+        facebook: lead.facebook,
+        linkedIn: lead.linkedIn,
+        x: lead.x,
+        notes: lead.notes,
+        createdAt: now,
+      });
+      leadIds.push(id);
+    }
+
+    return leadIds;
+  },
+});
+
+export const update = mutation({
+  args: {
+    leadId: v.id("leads"),
+    businessName: v.optional(v.string()),
+    category: v.optional(v.string()),
+    location: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    website: v.optional(v.string()),
+    address: v.optional(v.string()),
+    description: v.optional(v.string()),
+    status: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    googleMapsUri: v.optional(v.string()),
+    instagram: v.optional(v.string()),
+    facebook: v.optional(v.string()),
+    linkedIn: v.optional(v.string()),
+    x: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const lead = await ctx.db.get(args.leadId);
+
+    if (!lead) throw new Error("Lead not found");
+    if (lead.userId !== user._id) throw new Error("Unauthorized");
+
+    const updates: Partial<typeof lead> = {};
+    if (args.businessName !== undefined) updates.businessName = args.businessName;
+    if (args.category !== undefined) updates.category = args.category;
+    if (args.location !== undefined) updates.location = args.location;
+    if (args.email !== undefined) updates.email = args.email;
+    if (args.phone !== undefined) updates.phone = args.phone;
+    if (args.website !== undefined) updates.website = args.website;
+    if (args.address !== undefined) updates.address = args.address;
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.status !== undefined) updates.status = args.status;
+    if (args.rating !== undefined) updates.rating = args.rating;
+    if (args.googleMapsUri !== undefined) updates.googleMapsUri = args.googleMapsUri;
+    if (args.instagram !== undefined) updates.instagram = args.instagram;
+    if (args.facebook !== undefined) updates.facebook = args.facebook;
+    if (args.linkedIn !== undefined) updates.linkedIn = args.linkedIn;
+    if (args.x !== undefined) updates.x = args.x;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    await ctx.db.patch(args.leadId, updates);
+  },
+});
+
+export const remove = mutation({
+  args: { leadId: v.id("leads") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const lead = await ctx.db.get(args.leadId);
+
+    if (!lead) throw new Error("Lead not found");
+    if (lead.userId !== user._id) throw new Error("Unauthorized");
+
+    await ctx.db.delete(args.leadId);
+  },
+});

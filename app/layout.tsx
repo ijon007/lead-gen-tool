@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
+import ConvexClientProvider from "@/components/ConvexClientProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -27,13 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={inter.variable} lang="en">
-      <body
-        className={`${inter.variable} antialiased`}
-      >
-        {children}
-        <Toaster />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html className={inter.variable} lang="en">
+        <body className={`${inter.variable} antialiased`}>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
