@@ -37,6 +37,7 @@ function PageContent() {
 
   const [isSearching, setIsSearching] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
+  const [searchInProgressForSheetId, setSearchInProgressForSheetId] = useState<string | null>(null);
 
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -107,9 +108,12 @@ function PageContent() {
     await updateSheet({ sheetId: id as Id<"sheets">, name });
   }
 
-  // Used by both SearchForm instances (header + empty state)
-  async function handleSearch(params: SearchParams, existingLeads?: Lead[]) {
-    if (!activeSheetId || !activeSheet) return;
+  // Used by both SearchForm instances (header + empty state). sheetIdOverride is the sheet
+  // that started the search (captured at submit time) so results always save to that sheet.
+  async function handleSearch(params: SearchParams, existingLeads?: Lead[], sheetIdOverride?: string) {
+    const targetSheetId = sheetIdOverride ?? activeSheetId;
+    const targetSheet = sheets?.find((s) => s._id === targetSheetId);
+    if (!targetSheetId || !targetSheet) return;
 
     let leadsToSave = existingLeads;
 
@@ -124,6 +128,7 @@ function PageContent() {
         console.error("Search error:", searchResult.error);
         setLoadingStage(null);
         setIsSearching(false);
+        setSearchInProgressForSheetId(null);
         return;
       }
       leadsToSave = searchResult.leads;
@@ -132,7 +137,7 @@ function PageContent() {
         setLoadingStage("enrich");
         const enrichResult = await enrichLeadsAction(
           leadsToSave,
-          activeSheet.columns
+          targetSheet.columns
         );
         if ("error" in enrichResult) {
           console.error("Enrichment error:", enrichResult.error);
@@ -143,7 +148,7 @@ function PageContent() {
     }
 
     await updateSheet({
-      sheetId: activeSheetId as Id<"sheets">,
+      sheetId: targetSheetId as Id<"sheets">,
       searchParams: params,
     });
 
@@ -153,11 +158,12 @@ function PageContent() {
         return rest;
       });
       await createBatchLeads({
-        sheetId: activeSheetId as Id<"sheets">,
+        sheetId: targetSheetId as Id<"sheets">,
         leads: leadsToInsert,
       });
     }
     setLoadingStage(null);
+    setSearchInProgressForSheetId(null);
   }
 
   if (!sheets || !activeSheet) {
@@ -168,10 +174,13 @@ function PageContent() {
     );
   }
 
+  const showLoadingForActiveTab = isSearching && searchInProgressForSheetId === activeSheetId;
+
   return (
-    <div className={`min-h-screen transition-all duration-300 ${isSearching ? 'overflow-hidden h-screen' : ''}`}>
+    <div className={`min-h-screen transition-all duration-300 ${showLoadingForActiveTab ? 'overflow-hidden h-screen' : ''}`}>
       <SheetTabs
         activeSheetId={activeSheetId ?? ""}
+        generatingSheetId={searchInProgressForSheetId}
         onRenameSheet={handleRenameSheet}
         sheets={sheets}
       />
@@ -190,11 +199,14 @@ function PageContent() {
               <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
                 <SearchForm
                   columns={activeSheet.columns}
+                  sheetId={activeSheetId ?? ""}
                   defaultCategory={activeSheet.searchParams?.category || ""}
                   defaultLocation={activeSheet.searchParams?.location || ""}
                   defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
                   onLoadingChange={setIsSearching}
                   onLoadingStageChange={setLoadingStage}
+                  onSearchStart={setSearchInProgressForSheetId}
+                  onSearchEnd={() => setSearchInProgressForSheetId(null)}
                   onSearch={handleSearch}
                 />
                 <ExportButton
@@ -206,7 +218,7 @@ function PageContent() {
           </header>
         )}
 
-        {isSearching ? (
+        {showLoadingForActiveTab ? (
           <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
             <EnrichmentLoading stage={loadingStage} />
           </main>
@@ -229,8 +241,11 @@ function PageContent() {
             <div className="mx-auto max-w-lg">
               <SearchForm
                 columns={activeSheet.columns}
+                sheetId={activeSheetId ?? ""}
                 onLoadingChange={setIsSearching}
                 onLoadingStageChange={setLoadingStage}
+                onSearchStart={setSearchInProgressForSheetId}
+                onSearchEnd={() => setSearchInProgressForSheetId(null)}
                 onSearch={handleSearch}
               />
             </div>

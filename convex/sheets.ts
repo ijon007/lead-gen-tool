@@ -8,8 +8,8 @@ export const list = query({
     const user = await getCurrentUser(ctx);
     return await ctx.db
       .query("sheets")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
+      .withIndex("by_user_and_created", (q) => q.eq("userId", user._id))
+      .order("asc")
       .collect();
   },
 });

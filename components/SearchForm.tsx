@@ -21,7 +21,10 @@ export type LoadingStage = "search" | "enrich" | null;
 
 interface SearchFormProps {
   columns: TableColumnConfig[];
-  onSearch: (params: SearchParams, leads?: Lead[]) => void;
+  sheetId: string;
+  onSearch: (params: SearchParams, leads?: Lead[], sheetId?: string) => void;
+  onSearchStart?: (sheetId: string) => void;
+  onSearchEnd?: () => void;
   onLoadingChange?: (loading: boolean) => void;
   onLoadingStageChange?: (stage: LoadingStage) => void;
   defaultCategory?: string;
@@ -31,7 +34,10 @@ interface SearchFormProps {
 
 export function SearchForm({
   columns,
+  sheetId,
   onSearch,
+  onSearchStart,
+  onSearchEnd,
   onLoadingChange,
   onLoadingStageChange,
   defaultCategory = "",
@@ -54,6 +60,7 @@ export function SearchForm({
 
     setLoading(true);
     onLoadingChange?.(true);
+    onSearchStart?.(sheetId);
     try {
       setLoadingStage("search");
       onLoadingStageChange?.("search");
@@ -63,6 +70,7 @@ export function SearchForm({
       if ("error" in searchResult) {
         console.error("[SearchForm] Search failed:", searchResult.error);
         toast.error("Search failed. See console for details.");
+        onSearchEnd?.();
         return;
       }
 
@@ -87,17 +95,18 @@ export function SearchForm({
       if (!enrichRes.ok) {
         console.error("Enrichment failed:", enrichData.error);
         toast.error(enrichData.error ?? "Enrichment failed. See console for details.");
-        onSearch({ category, location, limit }, leads);
+        onSearch({ category, location, limit }, leads, sheetId);
         return;
       }
 
       const enrichedLeads = enrichData.leads ?? leads;
       console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, "enriched leads");
       toast.success("Search and enrichment completed successfully");
-      onSearch({ category, location, limit }, enrichedLeads);
+      onSearch({ category, location, limit }, enrichedLeads, sheetId);
     } catch (err) {
       console.error("[SearchForm] Search failed:", err);
       toast.error("Search failed. See console for details.");
+      onSearchEnd?.();
     } finally {
       setLoading(false);
       setLoadingStage(null);

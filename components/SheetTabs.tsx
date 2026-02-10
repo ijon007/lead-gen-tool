@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
+import { Copy, PencilSimple, Plus, Spinner, Trash } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
@@ -25,6 +25,7 @@ interface SheetTabItem {
 interface SheetTabsProps {
   sheets: Doc<"sheets">[];
   activeSheetId: string;
+  generatingSheetId?: string | null;
   onRenameSheet: (id: string, name: string) => void;
 }
 
@@ -34,6 +35,7 @@ const TAB_MAX_W = 160;
 export function SheetTabs({
   sheets,
   activeSheetId,
+  generatingSheetId = null,
   onRenameSheet,
 }: SheetTabsProps) {
   const router = useRouter();
@@ -132,6 +134,7 @@ export function SheetTabs({
         {orderedSheets.map((sheet) => {
           const isActive = sheet.id === activeSheetId;
           const isEditing = editingId === sheet.id;
+          const isGenerating = sheet.id === generatingSheetId;
 
           return (
             <ContextMenu key={sheet.id}>
@@ -174,12 +177,15 @@ export function SheetTabs({
                 ) : (
                   <span
                     className={cn(
-                      "block truncate font-medium text-xs",
+                      "flex min-w-0 items-center gap-1.5 font-medium text-xs",
                       isActive ? "text-foreground" : "text-muted-foreground"
                     )}
                     title={sheet.name}
                   >
-                    {sheet.name}
+                    {isGenerating && (
+                      <Spinner className="size-3.5 shrink-0 animate-spin" weight="bold" />
+                    )}
+                    <span className="truncate">{sheet.name}</span>
                   </span>
                 )}
               </ContextMenuTrigger>
