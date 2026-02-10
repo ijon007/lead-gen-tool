@@ -1,10 +1,16 @@
 "use client";
 
-import { CaretDownIcon, CaretUpIcon, Plus } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon, Copy, Plus, Trash } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownCell } from "@/components/MarkdownCell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -113,6 +119,8 @@ export function ResultsTable({
 }: ResultsTableProps) {
   const updateLead = useMutation(api.leads.update);
   const updateSheet = useMutation(api.sheets.update);
+  const createLead = useMutation(api.leads.create);
+  const removeLead = useMutation(api.leads.remove);
 
   async function onUpdateLead(id: string, field: keyof Lead, value: string) {
     const updates: Record<string, string | number | undefined> = {};
@@ -126,6 +134,32 @@ export function ResultsTable({
 
   async function onColumnsChange(columns: TableColumnConfig[]) {
     await updateSheet({ sheetId: sheetId as Id<"sheets">, columns });
+  }
+
+  async function handleDuplicate(lead: Lead) {
+    await createLead({
+      sheetId: sheetId as Id<"sheets">,
+      businessName: lead.businessName,
+      category: lead.category,
+      location: lead.location,
+      email: lead.email,
+      phone: lead.phone,
+      website: lead.website,
+      address: lead.address,
+      description: lead.description,
+      status: lead.status,
+      rating: lead.rating,
+      googleMapsUri: lead.googleMapsUri,
+      instagram: lead.instagram,
+      facebook: lead.facebook,
+      linkedIn: lead.linkedIn,
+      x: lead.x,
+      notes: lead.notes,
+    });
+  }
+
+  async function handleDelete(leadId: string) {
+    await removeLead({ leadId: leadId as Id<"leads"> });
   }
 
   const visibleCols = visibleColumns.filter((col) => col.visible);
@@ -375,11 +409,13 @@ export function ResultsTable({
           {sortedLeads.map((lead, index) => {
             const h = rowHeights[lead.id] ?? DEFAULT_ROW_HEIGHT;
             return (
-              <TableRow
-                className="group/row"
-                key={lead.id}
-                style={{ height: h }}
-              >
+              <ContextMenu key={lead.id}>
+                <ContextMenuTrigger
+                  render={
+                    <TableRow
+                      className="group/row"
+                      style={{ height: h }}
+                    >
                 <TableCell className="sticky left-0 z-20 border-border border-r bg-background p-0 text-center align-top text-muted-foreground text-xs">
                   <div className="px-2.5 py-1.5">{index + 1}</div>
                   <div
@@ -451,7 +487,31 @@ export function ResultsTable({
                   </div>
                 </TableCell>
                 <TableCell className="sticky right-0 z-20 w-8 border-border border-l bg-background p-0 align-top" />
-              </TableRow>
+                    </TableRow>
+                  }
+                />
+                <ContextMenuContent>
+                  <ContextMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDuplicate(lead);
+                    }}
+                  >
+                    <Copy className="size-3.5" />
+                    Duplicate
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDelete(lead.id);
+                    }}
+                    variant="destructive"
+                  >
+                    <Trash className="size-3.5" />
+                    Delete
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             );
           })}
         </TableBody>
