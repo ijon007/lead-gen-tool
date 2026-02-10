@@ -4,7 +4,7 @@ import { google } from "@ai-sdk/google";
 import { convertToModelMessages, streamText } from "ai";
 import type { UIMessage } from "ai";
 
-const DEFAULT_MODEL = "gemini-3-flash";
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 
 export async function POST(req: Request) {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;

@@ -6,7 +6,7 @@ import { EditableTitle } from "@/components/EditableTitle";
 import { EnrichmentLoading } from "@/components/EnrichmentLoading";
 import { ExportButton } from "@/components/ExportButton";
 import { ResultsTable } from "@/components/ResultsTable";
-import { SearchForm } from "@/components/SearchForm";
+import { SearchForm, type LoadingStage } from "@/components/SearchForm";
 import { SheetTabs } from "@/components/SheetTabs";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
 import type {
@@ -51,6 +51,7 @@ function PageContent() {
     return [defaultSheet.id];
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
   // Get active sheet ID from URL, fallback to first sheet
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -73,24 +74,8 @@ function PageContent() {
   const activeSheet = sheets[activeSheetId];
 
   const filteredLeads = useMemo(() => {
-    if (!activeSheet) {
-      return [];
-    }
-    const { leads, searchParams: sheetSearchParams } = activeSheet;
-    if (!sheetSearchParams) {
-      return leads;
-    }
-    return leads.filter((lead) => {
-      const categoryMatch =
-        !sheetSearchParams.category ||
-        lead.category === sheetSearchParams.category;
-      const locationMatch =
-        !sheetSearchParams.location ||
-        lead.location
-          .toLowerCase()
-          .includes(sheetSearchParams.location.toLowerCase());
-      return categoryMatch && locationMatch;
-    });
+    if (!activeSheet) return [];
+    return activeSheet.leads;
   }, [activeSheet]);
 
   const hasSearched = useMemo(() => {
@@ -279,6 +264,7 @@ function PageContent() {
                 <SearchForm
                   columns={activeSheet.columns}
                   onLoadingChange={setIsSearching}
+                  onLoadingStageChange={setLoadingStage}
                   onSearch={handleSearch}
                 />
                 <ExportButton
@@ -292,7 +278,7 @@ function PageContent() {
 
         {isSearching ? (
           <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
-            <EnrichmentLoading />
+            <EnrichmentLoading stage={loadingStage} />
           </main>
         ) : hasSearched ? (
           <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
@@ -316,6 +302,7 @@ function PageContent() {
               <SearchForm
                 columns={activeSheet.columns}
                 onLoadingChange={setIsSearching}
+                onLoadingStageChange={setLoadingStage}
                 onSearch={handleSearch}
               />
             </div>

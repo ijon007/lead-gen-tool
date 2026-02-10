@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html className={inter.variable} lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} antialiased`}
       >
         {children}
         <Toaster />

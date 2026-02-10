@@ -1,11 +1,42 @@
 "use client";
 
 import { Sparkle } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import type { LoadingStage } from "./SearchForm";
 
-export function EnrichmentLoading() {
+const SEARCH_MESSAGES = [
+  "Fetching business listings...",
+  "Searching places in your area...",
+  "Loading results...",
+];
+
+const ENRICH_MESSAGES = [
+  "Searching for contact info and social profiles...",
+  "Looking up business details...",
+  "Finding email and phone numbers...",
+  "Checking social media...",
+  "Enriching with AI tools...",
+];
+
+interface EnrichmentLoadingProps {
+  stage?: LoadingStage;
+}
+
+export function EnrichmentLoading({ stage = "search" }: EnrichmentLoadingProps) {
+  const effectiveStage = stage ?? "search";
+  const messages = effectiveStage === "enrich" ? ENRICH_MESSAGES : SEARCH_MESSAGES;
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMessageIndex((i) => (i + 1) % messages.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [messages.length]);
+
   return (
-    <div className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
+    <div className="fade-in-0 slide-in-from-top-4 animate-in relative duration-300">
       <div className="rounded-md border">
         <div className="overflow-hidden">
           {/* Skeleton header */}
@@ -46,31 +77,42 @@ export function EnrichmentLoading() {
           </div>
         </div>
       </div>
-      <Card className="overflow-hidden border-primary/20 bg-primary/5">
-        <div
-          className="h-1 w-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, oklch(0.51 0.23 277 / 0.4), transparent)",
-            backgroundSize: "200% 100%",
-            animation: "shimmer 1.5s ease-in-out infinite",
-          }}
-        />
-        <CardContent className="flex items-center justify-center gap-3 py-8">
-          <Sparkle
-            className="size-6 animate-pulse text-primary"
-            weight="duotone"
+
+      {/* Overlay card - centered on table, square, high z-index */}
+      <div
+        className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <Card className="h-52 w-52 overflow-hidden border-primary/20 bg-background shadow-lg">
+          <div
+            className="h-1 w-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, oklch(0.51 0.23 277 / 0.4), transparent)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 1.5s ease-in-out infinite",
+            }}
           />
-          <div className="flex flex-col items-center gap-1">
-            <p className="font-medium text-foreground">
-              Enriching leads with AI
-            </p>
-            <p className="text-muted-foreground text-sm">
-              Searching for contact info and social profiles...
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent className="flex h-full flex-col items-center justify-center gap-3 p-4">
+            <Sparkle
+              className="size-6 shrink-0 animate-pulse text-primary"
+              weight="duotone"
+            />
+            <div className="flex min-h-10 flex-col items-center justify-center overflow-hidden">
+              <p className="font-medium text-sm text-foreground">
+                {effectiveStage === "enrich" ? "Enriching leads with AI" : "Fetching leads"}
+              </p>
+              <p
+                key={messageIndex}
+                className="text-muted-foreground text-center animate-in fade-in-0 slide-in-from-bottom-1 duration-300"
+              >
+                {messages[messageIndex]}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -55,7 +55,7 @@ export function MarkdownCell({ value, onSave, className }: MarkdownCellProps) {
         onBlur={handleSave}
         onChange={(e) => setLocalValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Markdown: **bold**, *italic*, [links](url), # headings, - lists, > quote, \`code\`, ~~strike~~, tables..."
+        placeholder=""
         ref={textareaRef}
         value={localValue}
       />

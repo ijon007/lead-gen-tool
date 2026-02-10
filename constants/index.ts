@@ -11,7 +11,9 @@ export const LEAD_STATUSES = [
   { value: "waiting-plus", label: "Strong" },
 ] as const;
 
-export const CATEGORIES = [
+export type CategoryItem = { value: string; label: string };
+
+export const CATEGORIES: CategoryItem[] = [
   { value: "restaurant", label: "Restaurant" },
   { value: "retail", label: "Retail" },
   { value: "healthcare", label: "Healthcare" },
@@ -22,7 +24,7 @@ export const CATEGORIES = [
   { value: "hospitality", label: "Hospitality" },
   { value: "automotive", label: "Automotive" },
   { value: "beauty", label: "Beauty & Wellness" },
-] as const;
+];
 
 export const DEFAULT_TABLE_COLUMNS: TableColumnConfig[] = [
   { id: "businessName", label: "Business Name", visible: true },
@@ -30,10 +32,14 @@ export const DEFAULT_TABLE_COLUMNS: TableColumnConfig[] = [
   { id: "location", label: "Location", visible: true },
   { id: "email", label: "Email", visible: true },
   { id: "phone", label: "Phone", visible: true },
-  { id: "website", label: "Website", visible: false },
-  { id: "address", label: "Address", visible: false },
+  { id: "website", label: "Website", visible: true },
+  { id: "address", label: "Address", visible: true },
   { id: "rating", label: "Rating", visible: false },
   { id: "description", label: "Description", visible: false },
-  { id: "socialMedia", label: "Social Media", visible: false },
+  { id: "instagram", label: "Instagram", visible: true },
+  { id: "facebook", label: "Facebook", visible: true },
+  { id: "linkedIn", label: "LinkedIn", visible: false },
+  { id: "x", label: "X", visible: false },
+  { id: "notes", label: "Notes", visible: true },
   { id: "googleMapsUri", label: "Google Maps", visible: false },
 ];

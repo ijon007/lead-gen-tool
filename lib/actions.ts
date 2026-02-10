@@ -16,7 +16,9 @@ export async function searchPlacesAction(
   }
 
   try {
+    console.log("[searchPlacesAction] Starting search", { category: cat, location: loc });
     const leads = await searchPlaces(cat, loc);
+    console.log("[searchPlacesAction] Search complete", leads.length, "leads");
     return { leads };
   } catch (err) {
     const message =

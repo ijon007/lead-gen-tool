@@ -6,20 +6,24 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { searchPlacesAction } from "@/lib/actions";
 import { CATEGORIES } from "@/constants";
 import type { Lead, SearchParams, TableColumnConfig } from "@/types";
+
+export type LoadingStage = "search" | "enrich" | null;
 
 interface SearchFormProps {
   columns: TableColumnConfig[];
   onSearch: (params: SearchParams, leads?: Lead[]) => void;
   onLoadingChange?: (loading: boolean) => void;
+  onLoadingStageChange?: (stage: LoadingStage) => void;
   defaultCategory?: string;
   defaultLocation?: string;
 }
@@ -28,13 +32,14 @@ export function SearchForm({
   columns,
   onSearch,
   onLoadingChange,
+  onLoadingStageChange,
   defaultCategory = "",
   defaultLocation = "",
 }: SearchFormProps) {
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
   const [loading, setLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState<"search" | "enrich" | null>(null);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,23 +49,26 @@ export function SearchForm({
     onLoadingChange?.(true);
     try {
       setLoadingStage("search");
+      onLoadingStageChange?.("search");
+      console.log("[SearchForm] Stage: fetching places data", { category, location });
       const searchResult = await searchPlacesAction(category, location);
 
       if ("error" in searchResult) {
-        console.error("Search failed:", searchResult.error);
+        console.error("[SearchForm] Search failed:", searchResult.error);
         toast.error("Search failed. See console for details.");
         return;
       }
 
       const { leads } = searchResult;
       console.log(
-        "Search success:",
-        leads.length > 0 ? "Data fetched" : "No data",
+        "[SearchForm] Stage: data fetched",
         leads.length,
         "leads"
       );
 
       setLoadingStage("enrich");
+      onLoadingStageChange?.("enrich");
+      console.log("[SearchForm] Stage: enriching with AI, calling /api/ai-sdk");
       const enrichRes = await fetch("/api/ai-sdk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,42 +85,52 @@ export function SearchForm({
       }
 
       const enrichedLeads = enrichData.leads ?? leads;
+      console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, "enriched leads");
       toast.success("Search and enrichment completed successfully");
       onSearch({ category, location }, enrichedLeads);
     } catch (err) {
-      console.error("Search failed:", err);
+      console.error("[SearchForm] Search failed:", err);
       toast.error("Search failed. See console for details.");
     } finally {
       setLoading(false);
       setLoadingStage(null);
+      onLoadingStageChange?.(null);
       onLoadingChange?.(false);
     }
   };
 
   return (
     <form
-      className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3"
+      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-3"
       onSubmit={handleSubmit}
     >
-      <div className="min-w-0 flex-1 space-y-2">
-        <Select
-          onValueChange={(value) => setCategory(value || "")}
-          value={category}
+      <div className="flex min-w-0 flex-1 items-center">
+        <Combobox
+          itemToStringValue={(cat) => cat.label}
+          items={CATEGORIES}
+          onValueChange={(item) => setCategory(item?.value ?? "")}
+          value={CATEGORIES.find((c) => c.value === category) ?? null}
         >
-          <SelectTrigger className="mb-0 w-full" id="category">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <ComboboxInput
+            className="w-full"
+            id="category"
+            placeholder="Select category"
+            showClear
+          />
+          <ComboboxContent>
+            <ComboboxEmpty>No category found.</ComboboxEmpty>
+            <ComboboxList>
+              {(cat) => (
+                <ComboboxItem key={cat.value} value={cat}>
+                  {cat.label}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="flex min-w-0 flex-1 items-center">
         <Input
           id="location"
           onChange={(e) => setLocation(e.target.value)}

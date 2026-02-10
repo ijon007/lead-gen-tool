@@ -35,7 +35,11 @@ function placeToLead(place: PlaceResult, category: string, location: string): Le
     status: mapBusinessStatusToLeadStatus(place.businessStatus),
     rating: place.rating,
     googleMapsUri: place.googleMapsUri,
-    socialMedia: "",
+    instagram: "",
+    facebook: "",
+    linkedIn: "",
+    x: "",
+    notes: "",
   };
 }
 
@@ -54,6 +58,7 @@ export async function searchPlaces(
     throw new Error("Category and location cannot both be empty");
   }
 
+  console.log("[placesClient] Fetching places", { textQuery, category, location });
   const res = await fetch(PLACES_API_URL, {
     method: "POST",
     headers: {
@@ -82,5 +87,6 @@ export async function searchPlaces(
 
   const data = (await res.json()) as SearchTextResponse;
   const places = data.places ?? [];
+  console.log("[placesClient] Places fetched", places.length, "results");
   return places.map((p) => placeToLead(p, category, location));
 }
