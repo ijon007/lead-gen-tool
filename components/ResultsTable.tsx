@@ -8,7 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import type { Lead, TableColumnConfig } from "@/types";
+import { Plus, Spinner } from "@phosphor-icons/react";
 import { EmptyState } from "./ResultsTable/EmptyState";
 import { IndexColumnHeader } from "./ResultsTable/IndexColumnHeader";
 import { ColumnHeader } from "./ResultsTable/ColumnHeader";
@@ -33,16 +35,28 @@ import {
   type SortDirection,
 } from "@/utils/table-utils";
 
-interface ResultsTableProps {
+const ADD_ONE_MESSAGES = [
+  "Adding one lead...",
+  "Fetching next result...",
+  "Enriching with AI...",
+];
+
+export interface ResultsTableProps {
   leads: Lead[];
   visibleColumns: TableColumnConfig[];
   sheetId: string;
+  onAddOneLead?: () => void;
+  isAddingOneLead?: boolean;
+  canAddOneLead?: boolean;
 }
 
 export function ResultsTable({
   leads,
   visibleColumns,
   sheetId,
+  onAddOneLead,
+  isAddingOneLead = false,
+  canAddOneLead = false,
 }: ResultsTableProps) {
 
   const visibleCols = visibleColumns.filter((col) => col.visible);
@@ -149,6 +163,15 @@ export function ResultsTable({
       };
     };
 
+  const [addOneMessageIndex, setAddOneMessageIndex] = useState(0);
+  useEffect(() => {
+    if (!isAddingOneLead) return;
+    const id = setInterval(() => {
+      setAddOneMessageIndex((i) => (i + 1) % ADD_ONE_MESSAGES.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [isAddingOneLead]);
+
   if (leads.length === 0) {
     return <EmptyState />;
   }
@@ -245,6 +268,32 @@ export function ResultsTable({
           })}
         </TableBody>
       </Table>
+      <div className="flex items-center justify-center gap-2 border-t border-border bg-muted/30 ">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          disabled={!canAddOneLead || isAddingOneLead || !onAddOneLead}
+          onClick={onAddOneLead}
+        >
+          {isAddingOneLead ? (
+            <>
+              <Spinner className="size-4 animate-spin duration-1000" weight="bold" />
+              <span className="text-muted-foreground text-xs">
+                {ADD_ONE_MESSAGES[addOneMessageIndex]}
+              </span>
+            </>
+          ) : (
+            <>
+              <Plus className="size-3" weight="bold" />
+              <span className="text-muted-foreground text-xs">
+                Add new lead
+              </span>
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

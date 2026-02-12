@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "Lead Generator - Find Business Leads",
   description:
     "Search for business leads by category and location. Export results to CSV.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

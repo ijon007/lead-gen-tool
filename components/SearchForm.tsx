@@ -117,7 +117,7 @@ export function SearchForm({
 
   return (
     <form
-      className="flex flex-col gap-2 lg:gap-4 sm:flex-row sm:items-center sm:gap-3 w-full lg:w-auto"
+      className="flex flex-col gap-2 sm:flex-row sm:items-center w-full lg:w-auto"
       onSubmit={handleSubmit}
     >
       <div className="flex min-w-0 w-full lg:max-w-40 items-center">

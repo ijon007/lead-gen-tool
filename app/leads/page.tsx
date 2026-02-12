@@ -11,10 +11,11 @@ import { SearchForm, type LoadingStage } from "@/components/SearchForm";
 import { useLeadsContext } from "@/components/leads-context";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
-import { searchPlacesAction, enrichLeadsAction } from "@/lib/actions";
+import { searchPlacesAction, enrichLeadsAction, addOneLeadAction } from "@/lib/actions";
 import type { Lead, SearchParams } from "@/types";
 import { Id } from "@/convex/_generated/dataModel";
 import { Spinner } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 function PageContent() {
   const searchParams = useSearchParams();
@@ -39,6 +40,7 @@ function PageContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
   const [searchInProgressForSheetId, setSearchInProgressForSheetId] = useState<string | null>(null);
+  const [isAddingOneLead, setIsAddingOneLead] = useState(false);
 
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -170,6 +172,40 @@ function PageContent() {
     handleSearchEnd();
   }
 
+  const canAddOneLead = Boolean(
+    activeSheet?.searchParams &&
+      (activeSheet.searchParams.category || activeSheet.searchParams.location)
+  );
+
+  async function handleAddOneLead() {
+    if (!canAddOneLead) {
+      toast.error("Run a search first to add more leads");
+      return;
+    }
+    if (!activeSheetId || !activeSheet) return;
+    setIsAddingOneLead(true);
+    try {
+      const result = await addOneLeadAction(
+        activeSheet.searchParams!.category,
+        activeSheet.searchParams!.location,
+        filteredLeads,
+        activeSheet.columns
+      );
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      const { id, ...rest } = result.lead;
+      await createBatchLeads({
+        sheetId: activeSheetId as Id<"sheets">,
+        leads: [rest],
+      });
+      toast.success("Lead added");
+    } finally {
+      setIsAddingOneLead(false);
+    }
+  }
+
   if (!sheets || !activeSheet) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -186,7 +222,7 @@ function PageContent() {
     >
       <div className="min-w-0 flex-1 overflow-auto transition-all duration-300">
         <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-background py-1 px-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1">
             <div className="flex items-center gap-2 min-w-0">
               <SidebarTrigger />
               <span className="block sm:hidden truncate text-sm font-semibold text-foreground">
@@ -228,6 +264,9 @@ function PageContent() {
                   leads={filteredLeads}
                   sheetId={activeSheetId ?? ""}
                   visibleColumns={activeSheet.columns}
+                  onAddOneLead={handleAddOneLead}
+                  isAddingOneLead={isAddingOneLead}
+                  canAddOneLead={canAddOneLead}
                 />
               </main>
             ) : (

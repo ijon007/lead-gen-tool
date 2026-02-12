@@ -53,3 +53,50 @@ export async function enrichLeadsAction(
     return { error: message };
   }
 }
+
+const ADD_ONE_LEAD_SEARCH_LIMIT = 20;
+
+function existingLeadKey(lead: Lead): string {
+  if (lead.googleMapsUri?.trim()) return lead.googleMapsUri.trim();
+  const name = (lead.businessName ?? "").trim();
+  const addr = (lead.address ?? "").trim();
+  return `${name}::${addr}`;
+}
+
+export async function addOneLeadAction(
+  category: string,
+  location: string,
+  existingLeads: Lead[],
+  columns: TableColumnConfig[]
+): Promise<{ lead: Lead } | { error: string }> {
+  const cat = category?.trim() ?? "";
+  const loc = location?.trim() ?? "";
+  if (!cat && !loc) {
+    return { error: "Category and location cannot both be empty" };
+  }
+
+  try {
+    const leads = await searchPlaces(cat, loc, ADD_ONE_LEAD_SEARCH_LIMIT);
+    const existingKeys = new Set(existingLeads.map(existingLeadKey));
+
+    const newLead = leads.find((l) => !existingKeys.has(existingLeadKey(l)));
+    if (!newLead) {
+      return { error: "No new places found for this search." };
+    }
+
+    const enrichResult = await enrichLeadsAction([newLead], columns);
+    if ("error" in enrichResult) {
+      return { error: enrichResult.error };
+    }
+    const enriched = enrichResult.leads[0];
+    if (!enriched) {
+      return { error: "Enrichment failed." };
+    }
+    return { lead: enriched };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "An unexpected error occurred";
+    console.error("[addOneLeadAction]", err);
+    return { error: message };
+  }
+}
