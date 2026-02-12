@@ -43,5 +43,6 @@ export const DEFAULT_TABLE_COLUMNS: TableColumnConfig[] = [
   { id: "linkedIn", label: "LinkedIn", visible: false },
   { id: "x", label: "X", visible: false },
   { id: "notes", label: "Notes", visible: true },
+  { id: "qualification", label: "Qualification", visible: true },
   { id: "googleMapsUri", label: "Google Maps", visible: false },
 ];

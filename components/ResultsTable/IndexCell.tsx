@@ -1,10 +1,12 @@
 import { TableCell } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface IndexCellProps {
   index: number;
   rowId: string;
   rowHeight: number;
   onResizeStart: (e: React.MouseEvent) => void;
+  rowAccentClass?: string;
 }
 
 export function IndexCell({
@@ -12,9 +14,13 @@ export function IndexCell({
   rowId,
   rowHeight,
   onResizeStart,
+  rowAccentClass,
 }: IndexCellProps) {
   return (
     <TableCell className="sticky left-0 z-20 border-border border-r bg-background p-0 text-center align-top text-muted-foreground text-xs">
+      {rowAccentClass ? (
+        <div className={cn("absolute left-0 top-0 bottom-0 w-1/12 shrink-0", rowAccentClass)} aria-hidden />
+      ) : null}
       <div className="px-2.5 py-1.5">{index + 1}</div>
       <div
         aria-orientation="horizontal"

@@ -16,6 +16,7 @@ export interface Lead {
   linkedIn?: string;
   x?: string;
   notes?: string;
+  qualification?: "High" | "Low" | "Skip";
 }
 
 export interface SearchParams {

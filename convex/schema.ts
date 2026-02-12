@@ -52,6 +52,13 @@ export default defineSchema({
     linkedIn: v.optional(v.string()),
     x: v.optional(v.string()),
     notes: v.optional(v.string()),
+    qualification: v.optional(
+      v.union(
+        v.literal("High"),
+        v.literal("Low"),
+        v.literal("Skip")
+      )
+    ),
     createdAt: v.number(),
   })
     .index("by_sheet", ["sheetId"])

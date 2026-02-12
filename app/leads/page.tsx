@@ -6,16 +6,29 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { EnrichmentLoading } from "@/components/EnrichmentLoading";
 import { ExportButton } from "@/components/ExportButton";
+import { QualifyLeadsDialog } from "@/components/QualifyLeadsDialog";
+import { QualificationProgressBanner } from "@/components/QualificationProgressBanner";
 import { ResultsTable } from "@/components/ResultsTable";
 import { SearchForm, type LoadingStage } from "@/components/SearchForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLeadsContext } from "@/components/leads-context";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
-import { searchPlacesAction, enrichLeadsAction, addOneLeadAction } from "@/lib/actions";
+import { searchPlacesAction, enrichLeadsAction, addOneLeadAction, qualifyLeadsAction } from "@/lib/actions";
 import { getExistingLeadKey } from "@/utils/leadKey";
 import type { Lead, SearchParams } from "@/types";
 import { Id } from "@/convex/_generated/dataModel";
-import { Spinner } from "@phosphor-icons/react";
+import { BroomIcon, Spinner, XCircleIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 function PageContent() {
@@ -33,6 +46,8 @@ function PageContent() {
   const createSheet = useMutation(api.sheets.create);
   const updateSheet = useMutation(api.sheets.update);
   const createBatchLeads = useMutation(api.leads.createBatch);
+  const updateBatchLeads = useMutation(api.leads.updateBatch);
+  const removeManyLeads = useMutation(api.leads.removeMany);
 
   useEffect(() => {
     if (currentUser === null) storeUser();
@@ -44,6 +59,13 @@ function PageContent() {
   const [isAddingOneLead, setIsAddingOneLead] = useState(false);
   const [isGetMore, setIsGetMore] = useState(false);
   const [getMoreLimit, setGetMoreLimit] = useState<number | undefined>(undefined);
+  const [qualifyDialogOpen, setQualifyDialogOpen] = useState(false);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [qualificationState, setQualificationState] = useState<{
+    phase: "running" | "done";
+    total: number;
+    done: number;
+  } | null>(null);
 
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -91,6 +113,7 @@ function PageContent() {
       linkedIn: lead.linkedIn,
       x: lead.x,
       notes: lead.notes,
+      qualification: lead.qualification,
     }));
   }, [leads]);
 
@@ -101,6 +124,20 @@ function PageContent() {
         : false,
     [activeSheet, filteredLeads]
   );
+
+  const columnsWithQualification = useMemo(() => {
+    if (!activeSheet) return [];
+    const hasQualification = activeSheet.columns.some((c) => c.id === "qualification");
+    if (hasQualification) return activeSheet.columns;
+    const qualCol = DEFAULT_TABLE_COLUMNS.find((c) => c.id === "qualification");
+    return qualCol ? [...activeSheet.columns, qualCol] : activeSheet.columns;
+  }, [activeSheet]);
+
+  const skipLeadIds = useMemo(
+    () => filteredLeads.filter((l) => l.qualification === "Skip").map((l) => l.id as Id<"leads">),
+    [filteredLeads]
+  );
+  const showCleanupButton = skipLeadIds.length > 0;
 
   useEffect(() => {
     if (sheets && sheets.length === 0) {
@@ -219,6 +256,47 @@ function PageContent() {
     }
   }
 
+  const QUALIFY_CHUNK_SIZE = 5;
+
+  function handleQualifyRun(instructions: string) {
+    if (filteredLeads.length === 0) {
+      toast.error("No leads to qualify.");
+      return;
+    }
+    const leadsToQualify = [...filteredLeads];
+    const total = leadsToQualify.length;
+    setQualificationState({ phase: "running", total, done: 0 });
+
+    (async () => {
+      for (let i = 0; i < total; i += QUALIFY_CHUNK_SIZE) {
+        const chunk = leadsToQualify.slice(i, i + QUALIFY_CHUNK_SIZE);
+        const result = await qualifyLeadsAction(chunk, instructions);
+        if ("error" in result) {
+          toast.error(result.error);
+          setQualificationState(null);
+          return;
+        }
+        const updates = chunk.map((lead, j) => ({
+          leadId: lead.id as Id<"leads">,
+          qualification: result.qualifications[j] ?? "Skip",
+        }));
+        await updateBatchLeads({ updates });
+        setQualificationState({
+          phase: "running",
+          total,
+          done: Math.min(i + chunk.length, total),
+        });
+      }
+      setQualificationState({ phase: "done", total, done: total });
+    })();
+  }
+
+  useEffect(() => {
+    if (qualificationState?.phase !== "done") return;
+    const id = setTimeout(() => setQualificationState(null), 2000);
+    return () => clearTimeout(id);
+  }, [qualificationState?.phase]);
+
   if (!sheets || !activeSheet) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -258,14 +336,72 @@ function PageContent() {
                 sheetSearchParams={activeSheet?.searchParams ?? null}
               />
             </div>
-            <div className="flex shrink-0 w-full lg:w-auto">
+            <div className="flex shrink-0 w-full lg:w-auto flex-wrap items-center gap-1">
+              {hasSearched && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQualifyDialogOpen(true)}
+                >
+                  <BroomIcon className="size-3" weight="bold" />
+                  Qualify leads
+                </Button>
+              )}
+              {showCleanupButton && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCleanupDialogOpen(true)}
+                >
+                  <XCircleIcon className="size-3" weight="bold" />
+                  Clean up sheet
+                </Button>
+              )}
               <ExportButton
-                columns={activeSheet.columns}
+                columns={columnsWithQualification}
                 leads={filteredLeads}
               />
             </div>
           </div>
         </header>
+
+        <QualifyLeadsDialog
+          open={qualifyDialogOpen}
+          onOpenChange={setQualifyDialogOpen}
+          onRun={handleQualifyRun}
+        />
+        {qualificationState && (
+          <QualificationProgressBanner
+            total={qualificationState.total}
+            done={qualificationState.done}
+            isComplete={qualificationState.phase === "done"}
+            onDismiss={() => setQualificationState(null)}
+          />
+        )}
+        <AlertDialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove skipped leads?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Remove all rows marked Skip? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  removeManyLeads({ leadIds: skipLeadIds });
+                  toast.success("Skipped leads removed.");
+                  setCleanupDialogOpen(false);
+                }}
+              >
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div className="py-2 px-1 transition-all duration-300">
           <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
@@ -278,7 +414,7 @@ function PageContent() {
                 <ResultsTable
                   leads={filteredLeads}
                   sheetId={activeSheetId ?? ""}
-                  visibleColumns={activeSheet.columns}
+                  visibleColumns={columnsWithQualification}
                   onAddOneLead={handleAddOneLead}
                   isAddingOneLead={isAddingOneLead}
                   canAddOneLead={canAddOneLead}

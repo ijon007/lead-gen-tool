@@ -1,6 +1,7 @@
 "use server";
 
 import { enrichLeads } from "@/lib/enrichLeads";
+import { qualifyLeads } from "@/lib/qualifyLeads";
 import { searchPlaces } from "@/lib/placesClient";
 import type { Lead, TableColumnConfig } from "@/types";
 
@@ -73,6 +74,28 @@ export async function enrichLeadsAction(
     const message =
       err instanceof Error ? err.message : "An unexpected error occurred";
     console.error("[enrichLeadsAction]", err);
+    return { error: message };
+  }
+}
+
+export async function qualifyLeadsAction(
+  leads: Lead[],
+  userInstructions: string
+): Promise<
+  | { qualifications: Array<"High" | "Low" | "Skip"> }
+  | { error: string }
+> {
+  if (leads.length === 0) {
+    return { qualifications: [] };
+  }
+
+  try {
+    const qualifications = await qualifyLeads(leads, userInstructions);
+    return { qualifications };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "An unexpected error occurred";
+    console.error("[qualifyLeadsAction]", err);
     return { error: message };
   }
 }

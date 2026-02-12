@@ -47,6 +47,9 @@ export const create = mutation({
     linkedIn: v.optional(v.string()),
     x: v.optional(v.string()),
     notes: v.optional(v.string()),
+    qualification: v.optional(
+      v.union(v.literal("High"), v.literal("Low"), v.literal("Skip"))
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -75,6 +78,7 @@ export const create = mutation({
       linkedIn: args.linkedIn,
       x: args.x,
       notes: args.notes,
+      qualification: args.qualification,
       createdAt: Date.now(),
     });
   },
@@ -101,6 +105,13 @@ export const createBatch = mutation({
         linkedIn: v.optional(v.string()),
         x: v.optional(v.string()),
         notes: v.optional(v.string()),
+        qualification: v.optional(
+          v.union(
+            v.literal("High"),
+            v.literal("Low"),
+            v.literal("Skip")
+          )
+        ),
       })
     ),
   },
@@ -136,6 +147,7 @@ export const createBatch = mutation({
         linkedIn: lead.linkedIn,
         x: lead.x,
         notes: lead.notes,
+        qualification: lead.qualification,
         createdAt: now + i,
       });
       leadIds.push(id);
@@ -144,6 +156,12 @@ export const createBatch = mutation({
     return leadIds;
   },
 });
+
+const qualificationValidator = v.union(
+  v.literal("High"),
+  v.literal("Low"),
+  v.literal("Skip")
+);
 
 export const update = mutation({
   args: {
@@ -164,6 +182,7 @@ export const update = mutation({
     linkedIn: v.optional(v.string()),
     x: v.optional(v.string()),
     notes: v.optional(v.string()),
+    qualification: v.optional(qualificationValidator),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -189,8 +208,42 @@ export const update = mutation({
     if (args.linkedIn !== undefined) updates.linkedIn = args.linkedIn;
     if (args.x !== undefined) updates.x = args.x;
     if (args.notes !== undefined) updates.notes = args.notes;
+    if (args.qualification !== undefined) updates.qualification = args.qualification;
 
     await ctx.db.patch(args.leadId, updates);
+  },
+});
+
+export const updateBatch = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        leadId: v.id("leads"),
+        qualification: qualificationValidator,
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    for (const { leadId, qualification } of args.updates) {
+      const lead = await ctx.db.get(leadId);
+      if (!lead) throw new Error("Lead not found");
+      if (lead.userId !== user._id) throw new Error("Unauthorized");
+      await ctx.db.patch(leadId, { qualification });
+    }
+  },
+});
+
+export const removeMany = mutation({
+  args: { leadIds: v.array(v.id("leads")) },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    for (const leadId of args.leadIds) {
+      const lead = await ctx.db.get(leadId);
+      if (!lead) throw new Error("Lead not found");
+      if (lead.userId !== user._id) throw new Error("Unauthorized");
+      await ctx.db.delete(leadId);
+    }
   },
 });
 

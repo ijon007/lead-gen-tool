@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { Lead, TableColumnConfig } from "@/types";
 import type { LoadingStage } from "./SearchForm";
 import { Plus, Spinner } from "@phosphor-icons/react";
@@ -19,6 +20,7 @@ import { StatusColumnHeader } from "./ResultsTable/StatusColumnHeader";
 import { ColumnVisibilityDropdown } from "./ResultsTable/ColumnVisibilityDropdown";
 import { IndexCell } from "./ResultsTable/IndexCell";
 import { DataCell } from "./ResultsTable/DataCell";
+import { QualificationCell, getQualificationRowAccentClass } from "./ResultsTable/QualificationCell";
 import { StatusCell } from "./ResultsTable/StatusCell";
 import { RowContextMenu } from "./ResultsTable/RowContextMenu";
 import {
@@ -252,8 +254,17 @@ export function ResultsTable({
                     rowId={lead.id}
                     rowHeight={h}
                     onResizeStart={startRowResize(lead.id, h)}
+                    rowAccentClass={getQualificationRowAccentClass(lead.qualification)}
                   />
                   {visibleCols.map((column) => {
+                    if (column.id === "qualification") {
+                      return (
+                        <QualificationCell
+                          key="qualification"
+                          lead={lead}
+                        />
+                      );
+                    }
                     const raw = lead[column.id as keyof Lead];
                     const value =
                       raw !== undefined && raw !== null ? String(raw) : "";
