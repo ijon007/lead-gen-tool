@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, DotsThreeOutlineIcon, PencilSimple, Plus, Spinner, Trash } from "@phosphor-icons/react";
+import { Copy, DotsThreeOutlineIcon, PencilSimple, Plus, Spinner, Table, Trash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
@@ -132,7 +132,7 @@ export function NavSheets() {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Sheets</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="flex group-data-[collapsible=icon]:items-center">
         {sheetsList.map((sheet) => {
           const isActive = sheet.id === activeSheetId;
           const isEditing = editingId === sheet.id;
@@ -169,8 +169,10 @@ export function NavSheets() {
                     tooltip={sheet.name}
                     className="cursor-pointer"
                   >
-                    {isGenerating && (
+                    {isGenerating ? (
                       <Spinner className="size-3.5 shrink-0 animate-spin" weight="bold" />
+                    ) : (
+                      <Table className="size-3.5 shrink-0 text-sidebar-foreground/70" weight="fill" />
                     )}
                     <span className="truncate">{sheet.name}</span>
                   </SidebarMenuButton>
