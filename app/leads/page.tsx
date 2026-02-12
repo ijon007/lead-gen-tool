@@ -404,7 +404,7 @@ function PageContent() {
         </AlertDialog>
 
         <div className="py-2 px-1 transition-all duration-300">
-          <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
+          <div className="w-full min-w-0 transition-all duration-300">
             {showLoadingForActiveTab && !isGetMore ? (
               <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
                 <EnrichmentLoading stage={loadingStage} />
