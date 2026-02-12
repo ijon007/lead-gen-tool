@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Authenticated, useQuery, useMutation } from "convex/react";
+import { UserButton } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { EditableTitle } from "@/components/EditableTitle";
 import { EnrichmentLoading } from "@/components/EnrichmentLoading";
@@ -108,7 +109,7 @@ function PageContent() {
     await updateSheet({ sheetId: id as Id<"sheets">, name });
   }
 
-  // Used by both SearchForm instances (header + empty state). sheetIdOverride is the sheet
+  // Used by SearchForm in the top bar. sheetIdOverride is the sheet
   // that started the search (captured at submit time) so results always save to that sheet.
   async function handleSearch(params: SearchParams, existingLeads?: Lead[], sheetIdOverride?: string) {
     const targetSheetId = sheetIdOverride ?? activeSheetId;
@@ -178,6 +179,28 @@ function PageContent() {
 
   return (
     <div className={`min-h-screen transition-all duration-300 ${showLoadingForActiveTab ? 'overflow-hidden h-screen' : ''}`}>
+      {/* Top bar with search form and user avatar */}
+      <div className="border-border border-b py-1 transition-all duration-300 sm:px-6 lg:px-8">
+        <div className="flex w-full items-center justify-between gap-4 transition-all duration-300">
+          <div className="flex">
+            <SearchForm
+              columns={activeSheet.columns}
+              sheetId={activeSheetId ?? ""}
+              defaultCategory={activeSheet.searchParams?.category || ""}
+              defaultLocation={activeSheet.searchParams?.location || ""}
+              defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
+              onLoadingChange={setIsSearching}
+              onLoadingStageChange={setLoadingStage}
+              onSearchStart={setSearchInProgressForSheetId}
+              onSearchEnd={() => setSearchInProgressForSheetId(null)}
+              onSearch={handleSearch}
+            />
+          </div>
+          <div className="shrink-0">
+            <UserButton userProfileMode="modal" />
+          </div>
+        </div>
+      </div>
       <SheetTabs
         activeSheetId={activeSheetId ?? ""}
         generatingSheetId={searchInProgressForSheetId}
@@ -196,19 +219,7 @@ function PageContent() {
                   handleRenameSheet(activeSheetId || "", newName)
                 }
               />
-              <div className="flex min-w-0 flex-col gap-3 sm:flex-1 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
-                <SearchForm
-                  columns={activeSheet.columns}
-                  sheetId={activeSheetId ?? ""}
-                  defaultCategory={activeSheet.searchParams?.category || ""}
-                  defaultLocation={activeSheet.searchParams?.location || ""}
-                  defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
-                  onLoadingChange={setIsSearching}
-                  onLoadingStageChange={setLoadingStage}
-                  onSearchStart={setSearchInProgressForSheetId}
-                  onSearchEnd={() => setSearchInProgressForSheetId(null)}
-                  onSearch={handleSearch}
-                />
+              <div className="flex shrink-0">
                 <ExportButton
                   columns={activeSheet.columns}
                   leads={filteredLeads}
@@ -231,24 +242,10 @@ function PageContent() {
             />
           </main>
         ) : (
-          <div className="fade-in-0 animate-in space-y-8 py-12 text-center duration-300">
-            <h1 className="font-bold text-4xl text-foreground">
-              Lead Generator
-            </h1>
+          <div className="fade-in-0 animate-in py-12 text-center duration-300">
             <p className="text-muted-foreground text-sm">
-              Search for business leads by category and location
+              Use the search above to generate leads for this sheet.
             </p>
-            <div className="mx-auto max-w-lg">
-              <SearchForm
-                columns={activeSheet.columns}
-                sheetId={activeSheetId ?? ""}
-                onLoadingChange={setIsSearching}
-                onLoadingStageChange={setLoadingStage}
-                onSearchStart={setSearchInProgressForSheetId}
-                onSearchEnd={() => setSearchInProgressForSheetId(null)}
-                onSearch={handleSearch}
-              />
-            </div>
           </div>
         )}
         </div>
