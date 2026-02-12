@@ -154,7 +154,7 @@ export function ResultsTable({
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="min-w-0 rounded-md border">
       <Table
         className="border-separate border-spacing-0"
         style={{ tableLayout: "fixed", width: "100%" }}

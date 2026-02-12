@@ -120,7 +120,7 @@ export function SearchForm({
       className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-3"
       onSubmit={handleSubmit}
     >
-      <div className="flex min-w-0 flex-1 items-center">
+      <div className="flex min-w-0 max-w-40 flex-1 items-center">
         <Combobox
           itemToStringValue={(cat) => cat.label}
           items={CATEGORIES}
@@ -128,7 +128,7 @@ export function SearchForm({
           value={CATEGORIES.find((c) => c.value === category) ?? null}
         >
           <ComboboxInput
-            className="w-full"
+            className="w-full min-w-0"
             id="category"
             placeholder="Select category"
             showClear
@@ -146,7 +146,7 @@ export function SearchForm({
         </Combobox>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center">
+      <div className="flex min-w-0 max-w-36 flex-1 items-center">
         <Input
           id="location"
           onChange={(e) => setLocation(e.target.value)}
@@ -158,7 +158,7 @@ export function SearchForm({
 
       <div className="flex min-w-0 items-center">
         <Input
-          className="w-24"
+          className="w-20"
           id="limit"
           max={50}
           min={1}

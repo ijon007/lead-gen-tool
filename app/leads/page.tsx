@@ -2,15 +2,14 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { Authenticated, useQuery, useMutation } from "convex/react";
-import { UserButton } from "@clerk/nextjs";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { EditableTitle } from "@/components/EditableTitle";
 import { EnrichmentLoading } from "@/components/EnrichmentLoading";
 import { ExportButton } from "@/components/ExportButton";
 import { ResultsTable } from "@/components/ResultsTable";
 import { SearchForm, type LoadingStage } from "@/components/SearchForm";
-import { SheetTabs } from "@/components/SheetTabs";
+import { useLeadsContext } from "@/components/leads-context";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
 import { searchPlacesAction, enrichLeadsAction } from "@/lib/actions";
 import type { Lead, SearchParams } from "@/types";
@@ -21,6 +20,7 @@ function PageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { setGeneratingSheetId } = useLeadsContext();
 
   const currentUser = useQuery(api.users.getCurrent);
   const sheets = useQuery(
@@ -104,13 +104,16 @@ function PageContent() {
     }
   }, [sheets, createSheet, router, pathname]);
 
-  // Shared by SheetTabs + EditableTitle
-  async function handleRenameSheet(id: string, name: string) {
-    await updateSheet({ sheetId: id as Id<"sheets">, name });
+  function handleSearchStart(sheetId: string) {
+    setSearchInProgressForSheetId(sheetId);
+    setGeneratingSheetId(sheetId);
   }
 
-  // Used by SearchForm in the top bar. sheetIdOverride is the sheet
-  // that started the search (captured at submit time) so results always save to that sheet.
+  function handleSearchEnd() {
+    setSearchInProgressForSheetId(null);
+    setGeneratingSheetId(null);
+  }
+
   async function handleSearch(params: SearchParams, existingLeads?: Lead[], sheetIdOverride?: string) {
     const targetSheetId = sheetIdOverride ?? activeSheetId;
     const targetSheet = sheets?.find((s) => s._id === targetSheetId);
@@ -129,7 +132,7 @@ function PageContent() {
         console.error("Search error:", searchResult.error);
         setLoadingStage(null);
         setIsSearching(false);
-        setSearchInProgressForSheetId(null);
+        handleSearchEnd();
         return;
       }
       leadsToSave = searchResult.leads;
@@ -164,7 +167,7 @@ function PageContent() {
       });
     }
     setLoadingStage(null);
-    setSearchInProgressForSheetId(null);
+    handleSearchEnd();
   }
 
   if (!sheets || !activeSheet) {
@@ -178,76 +181,58 @@ function PageContent() {
   const showLoadingForActiveTab = isSearching && searchInProgressForSheetId === activeSheetId;
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${showLoadingForActiveTab ? 'overflow-hidden h-screen' : ''}`}>
-      {/* Top bar with search form and user avatar */}
-      <div className="border-border border-b py-1 transition-all duration-300 sm:px-6 lg:px-8">
-        <div className="flex w-full items-center justify-between gap-4 transition-all duration-300">
-          <div className="flex">
-            <SearchForm
-              columns={activeSheet.columns}
-              sheetId={activeSheetId ?? ""}
-              defaultCategory={activeSheet.searchParams?.category || ""}
-              defaultLocation={activeSheet.searchParams?.location || ""}
-              defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
-              onLoadingChange={setIsSearching}
-              onLoadingStageChange={setLoadingStage}
-              onSearchStart={setSearchInProgressForSheetId}
-              onSearchEnd={() => setSearchInProgressForSheetId(null)}
-              onSearch={handleSearch}
-            />
-          </div>
-          <div className="shrink-0">
-            <UserButton userProfileMode="modal" />
-          </div>
-        </div>
-      </div>
-      <SheetTabs
-        activeSheetId={activeSheetId ?? ""}
-        generatingSheetId={searchInProgressForSheetId}
-        onRenameSheet={handleRenameSheet}
-        sheets={sheets}
-      />
-      <div className="px-4 py-2 transition-all duration-300 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-7xl transition-all duration-300">
-          {hasSearched && (
-          <header className="mb-6 transition-all duration-300">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-              <EditableTitle
-                key={activeSheetId}
-                name={activeSheet.name}
-                onSave={(newName) =>
-                  handleRenameSheet(activeSheetId || "", newName)
-                }
+    <div
+      className={`flex h-full min-h-0 min-w-0 flex-col transition-all duration-300 ${showLoadingForActiveTab ? "overflow-hidden" : ""}`}
+    >
+      <div className="min-w-0 flex-1 overflow-auto transition-all duration-300">
+        <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-background py-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <SidebarTrigger />
+            <div className="flex min-w-0 flex-1 basis-full sm:basis-0">
+              <SearchForm
+                columns={activeSheet.columns}
+                sheetId={activeSheetId ?? ""}
+                defaultCategory={activeSheet.searchParams?.category || ""}
+                defaultLocation={activeSheet.searchParams?.location || ""}
+                defaultLimit={(activeSheet.searchParams as SearchParams | null)?.limit || 10}
+                onLoadingChange={setIsSearching}
+                onLoadingStageChange={setLoadingStage}
+                onSearchStart={handleSearchStart}
+                onSearchEnd={handleSearchEnd}
+                onSearch={handleSearch}
               />
-              <div className="flex shrink-0">
-                <ExportButton
-                  columns={activeSheet.columns}
-                  leads={filteredLeads}
-                />
-              </div>
             </div>
-          </header>
-        )}
-
-        {showLoadingForActiveTab ? (
-          <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
-            <EnrichmentLoading stage={loadingStage} />
-          </main>
-        ) : hasSearched ? (
-          <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
-            <ResultsTable
-              leads={filteredLeads}
-              sheetId={activeSheetId ?? ""}
-              visibleColumns={activeSheet.columns}
-            />
-          </main>
-        ) : (
-          <div className="fade-in-0 animate-in py-12 text-center duration-300">
-            <p className="text-muted-foreground text-sm">
-              Use the search above to generate leads for this sheet.
-            </p>
+            <div className="flex shrink-0">
+              <ExportButton
+                columns={activeSheet.columns}
+                leads={filteredLeads}
+              />
+            </div>
           </div>
-        )}
+        </header>
+
+        <div className="py-2 transition-all duration-300">
+        <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
+          {showLoadingForActiveTab ? (
+            <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
+              <EnrichmentLoading stage={loadingStage} />
+            </main>
+          ) : hasSearched ? (
+            <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
+              <ResultsTable
+                leads={filteredLeads}
+                sheetId={activeSheetId ?? ""}
+                visibleColumns={activeSheet.columns}
+              />
+            </main>
+          ) : (
+            <div className="fade-in-0 animate-in py-12 text-center duration-300">
+              <p className="text-muted-foreground text-sm">
+                Use the search above to generate leads for this sheet.
+              </p>
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>
@@ -256,14 +241,14 @@ function PageContent() {
 
 export default function LeadsPage() {
   return (
-    <Authenticated>
-      <Suspense fallback={
+    <Suspense
+      fallback={
         <div className="flex min-h-screen items-center justify-center">
           <div>Loading...</div>
         </div>
-      }>
-        <PageContent />
-      </Suspense>
-    </Authenticated>
+      }
+    >
+      <PageContent />
+    </Suspense>
   );
 }
