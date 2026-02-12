@@ -131,7 +131,19 @@ export function NavSheets() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Sheets</SidebarGroupLabel>
+      <SidebarMenu className="flex group-data-[collapsible=icon]:items-center">
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className="text-sidebar-foreground/70 cursor-pointer"
+            onClick={onAddSheet}
+            tooltip="New sheet"
+          >
+            <Plus className="size-3" weight="bold"/>
+            <span>New sheet</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      <SidebarGroupLabel className="mt-1">Sheets</SidebarGroupLabel>
       <SidebarMenu className="flex group-data-[collapsible=icon]:items-center">
         {sheetsList.map((sheet) => {
           const isActive = sheet.id === activeSheetId;
@@ -233,16 +245,6 @@ export function NavSheets() {
             </SidebarMenuItem>
           );
         })}
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            className="text-sidebar-foreground/70 cursor-pointer"
-            onClick={onAddSheet}
-            tooltip="New sheet"
-          >
-            <Plus className="size-3" weight="bold"/>
-            <span>New sheet</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );
