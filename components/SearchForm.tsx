@@ -162,7 +162,7 @@ export function SearchForm({
           value={CATEGORIES.find((c) => c.value === category) ?? null}
         >
           <ComboboxInput
-            className="w-full min-w-0 text-xs"
+            className="w-full min-w-0 text-xs h-6"
             id="category"
             placeholder="Select category"
             showClear
@@ -216,8 +216,9 @@ export function SearchForm({
         disabled={loading}
         type="submit"
         variant="default"
+        size="sm"
       >
-        <MagnifyingGlass className="size-4" />
+        <MagnifyingGlass className="size-3" weight="bold" />
         {loading
           ? loadingStage === "enrich"
             ? "Enriching with AI..."

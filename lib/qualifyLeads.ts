@@ -2,6 +2,7 @@ import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import type { Lead } from "@/types";
+import { SYSTEM_PROMPT } from "./system-prompt";
 
 const QUALIFY_MODEL_ID =
   process.env.GOOGLE_GENERATIVE_AI_MODEL ?? "gemini-3-flash-preview";
@@ -13,13 +14,6 @@ const QUALIFY_TOOLS = {
 const QUALIFY_SCHEMA = z.object({
   qualification: z.enum(["High", "Low", "Skip"]),
 });
-
-const QUALIFY_SYSTEM_PROMPT = `You are a lead qualification agent for a B2B prospecting tool. You will receive a lead (business) and the user's criteria for what makes a quality lead. Your job is to classify the lead as:
-- High: fits the user's criteria well; worth pursuing.
-- Low: partially fits or weak fit; lower priority.
-- Skip: does not fit or not worth pursuing.
-
-Use only the lead data provided. If you need more information to decide (e.g. whether they already use a digital menu, social presence), use the search tool to look up the business. Then output exactly one classification: High, Low, or Skip.`;
 
 function leadToContext(lead: Lead): string {
   const parts: string[] = [];
@@ -66,7 +60,7 @@ If you need to verify something (e.g. check their website or socials), use the s
       object: { qualification: QualificationResult };
     }>)({
       model: google(QUALIFY_MODEL_ID),
-      system: QUALIFY_SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT,
       tools: QUALIFY_TOOLS,
       schema: QUALIFY_SCHEMA,
       prompt,
