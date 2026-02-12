@@ -12,6 +12,7 @@ import { useLeadsContext } from "@/components/leads-context";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
 import { searchPlacesAction, enrichLeadsAction, addOneLeadAction } from "@/lib/actions";
+import { getExistingLeadKey } from "@/utils/leadKey";
 import type { Lead, SearchParams } from "@/types";
 import { Id } from "@/convex/_generated/dataModel";
 import { Spinner } from "@phosphor-icons/react";
@@ -193,11 +194,13 @@ function PageContent() {
     }
     if (!activeSheetId || !activeSheet) return;
     setIsAddingOneLead(true);
+    setGeneratingSheetId(activeSheetId);
     try {
+      const existingLeadKeys = filteredLeads.map(getExistingLeadKey);
       const result = await addOneLeadAction(
         activeSheet.searchParams!.category,
         activeSheet.searchParams!.location,
-        filteredLeads,
+        existingLeadKeys,
         activeSheet.columns
       );
       if ("error" in result) {
@@ -212,6 +215,7 @@ function PageContent() {
       toast.success("Lead added");
     } finally {
       setIsAddingOneLead(false);
+      setGeneratingSheetId(null);
     }
   }
 

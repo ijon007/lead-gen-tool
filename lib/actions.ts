@@ -86,10 +86,11 @@ function existingLeadKey(lead: Lead): string {
   return `${name}::${addr}`;
 }
 
+/** Pass only dedupe keys from the client to avoid huge payloads (e.g. after "get more"). */
 export async function addOneLeadAction(
   category: string,
   location: string,
-  existingLeads: Lead[],
+  existingLeadKeys: string[],
   columns: TableColumnConfig[]
 ): Promise<{ lead: Lead } | { error: string }> {
   const cat = category?.trim() ?? "";
@@ -100,7 +101,7 @@ export async function addOneLeadAction(
 
   try {
     const { leads } = await searchPlaces(cat, loc, ADD_ONE_LEAD_SEARCH_LIMIT);
-    const existingKeys = new Set(existingLeads.map(existingLeadKey));
+    const existingKeys = new Set(existingLeadKeys);
 
     const newLead = leads.find((l) => !existingKeys.has(existingLeadKey(l)));
     if (!newLead) {
