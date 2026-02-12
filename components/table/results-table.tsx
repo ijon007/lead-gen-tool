@@ -11,18 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Lead, TableColumnConfig } from "@/types";
-import type { LoadingStage } from "./SearchForm";
+import type { LoadingStage } from "../search-form";
 import { Plus, Spinner } from "@phosphor-icons/react";
-import { EmptyState } from "./ResultsTable/EmptyState";
-import { IndexColumnHeader } from "./ResultsTable/IndexColumnHeader";
-import { ColumnHeader } from "./ResultsTable/ColumnHeader";
-import { StatusColumnHeader } from "./ResultsTable/StatusColumnHeader";
-import { ColumnVisibilityDropdown } from "./ResultsTable/ColumnVisibilityDropdown";
-import { IndexCell } from "./ResultsTable/IndexCell";
-import { DataCell } from "./ResultsTable/DataCell";
-import { QualificationCell, getQualificationRowAccentClass } from "./ResultsTable/QualificationCell";
-import { StatusCell } from "./ResultsTable/StatusCell";
-import { RowContextMenu } from "./ResultsTable/RowContextMenu";
+import { EmptyState } from "./results-table/empty-state";
+import { IndexColumnHeader } from "./results-table/index-column-header";
+import { ColumnHeader } from "./results-table/column-header";
+import { StatusColumnHeader } from "./results-table/status-column-header";
+import { ColumnVisibilityDropdown } from "./results-table/column-visibility-dropdown";
+import { IndexCell } from "./results-table/index-cell";
+import { DataCell } from "./results-table/data-cell";
+import { QualificationCell, getQualificationRowAccentClass } from "./results-table/qualification-cell";
+import { StatusCell } from "./results-table/status-cell";
+import { RowContextMenu } from "./results-table/row-context-menu";
 import {
   COL_INDEX,
   COL_STATUS,

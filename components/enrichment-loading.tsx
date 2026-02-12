@@ -3,7 +3,7 @@
 import { Sparkle } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { LoadingStage } from "./SearchForm";
+import type { LoadingStage } from "../search/search-form";
 
 const SEARCH_MESSAGES = [
   "Fetching business listings...",

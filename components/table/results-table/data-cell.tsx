@@ -1,7 +1,7 @@
 "use client";
 
 import { TableCell } from "@/components/ui/table";
-import { MarkdownCell } from "@/components/MarkdownCell";
+import { MarkdownCell } from "@/components/table/markdown-cell";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";

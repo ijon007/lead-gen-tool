@@ -1,4 +1,4 @@
-import { LeadsLayoutClient } from "@/components/leads-layout-client";
+import { LeadsLayoutClient } from "@/components/providers/leads-layout-client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {

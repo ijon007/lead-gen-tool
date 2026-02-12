@@ -4,12 +4,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { EnrichmentLoading } from "@/components/EnrichmentLoading";
-import { ExportButton } from "@/components/ExportButton";
-import { QualifyLeadsDialog } from "@/components/QualifyLeadsDialog";
-import { QualificationProgressBanner } from "@/components/QualificationProgressBanner";
-import { ResultsTable } from "@/components/ResultsTable";
-import { SearchForm, type LoadingStage } from "@/components/SearchForm";
+import { EnrichmentLoading } from "@/components/enrichment-loading";
+import { ExportButton } from "@/components/export-button";
+import { QualifyLeadsDialog } from "@/components/qualification/qualify-leads-dialog";
+import { QualificationProgressBanner } from "@/components/qualification/qualification-progress-banner";
+import { ResultsTable } from "@/components/table/results-table";
+import { SearchForm, type LoadingStage } from "@/components/search-form";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useLeadsContext } from "@/components/leads-context";
+import { useLeadsContext } from "@/components/providers/leads-context";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";

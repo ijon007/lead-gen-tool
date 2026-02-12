@@ -2,7 +2,7 @@
 
 import { Authenticated, Unauthenticated } from "convex/react";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import { LeadsProvider } from "@/components/leads-context";
+import { LeadsProvider } from "@/components/providers/leads-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export function LeadsLayoutClient({ children }: { children: React.ReactNode }) {

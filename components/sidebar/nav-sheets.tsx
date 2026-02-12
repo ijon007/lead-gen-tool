@@ -24,7 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
-import { useLeadsContext } from "@/components/leads-context";
+import { useLeadsContext } from "@/components/providers/leads-context";
 
 interface SheetItem {
   id: string;
