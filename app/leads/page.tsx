@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { EnrichmentLoading } from "@/components/enrichment-loading";
-import { ExportButton } from "@/components/export-button";
+import { ImportLeadsDialog } from "@/components/import-leads-dialog";
 import { QualifyLeadsDialog } from "@/components/qualification/qualify-leads-dialog";
 import { QualificationProgressBanner } from "@/components/qualification/qualification-progress-banner";
 import { ResultsTable } from "@/components/table/results-table";
@@ -20,6 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useLeadsContext } from "@/components/providers/leads-context";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -28,7 +34,8 @@ import { searchPlacesAction, enrichLeadsAction, addOneLeadAction, qualifyLeadsAc
 import { getExistingLeadKey } from "@/utils/leadKey";
 import type { Lead, SearchParams } from "@/types";
 import { Id } from "@/convex/_generated/dataModel";
-import { BroomIcon, Spinner, XCircleIcon } from "@phosphor-icons/react";
+import { exportToCsv } from "@/utils/csv";
+import { BroomIcon, CaretDownIcon, Download, FileArrowUpIcon, Spinner, XCircleIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 function PageContent() {
@@ -61,6 +68,7 @@ function PageContent() {
   const [getMoreLimit, setGetMoreLimit] = useState<number | undefined>(undefined);
   const [qualifyDialogOpen, setQualifyDialogOpen] = useState(false);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [qualificationState, setQualificationState] = useState<{
     phase: "running" | "done";
     total: number;
@@ -336,12 +344,12 @@ function PageContent() {
                 sheetSearchParams={activeSheet?.searchParams ?? null}
               />
             </div>
-            <div className="flex shrink-0 w-full lg:w-auto flex-wrap items-center gap-1">
+            <div className="flex flex-col shrink-0 w-full lg:w-auto sm:flex-row sm:items-center gap-1">
               {hasSearched && (
                 <Button
                   type="button"
-                  variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => setQualifyDialogOpen(true)}
                 >
                   <BroomIcon className="size-3" weight="bold" />
@@ -353,20 +361,47 @@ function PageContent() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => setCleanupDialogOpen(true)}
                 >
                   <XCircleIcon className="size-3" weight="bold" />
                   Clean up sheet
                 </Button>
               )}
-              <ExportButton
-                columns={columnsWithQualification}
-                leads={filteredLeads}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
+                      Transfer
+                      <CaretDownIcon className="size-3" weight="bold" />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setImportDialogOpen(true)}
+                  >
+                    <FileArrowUpIcon className="size-3" weight="bold" />
+                    Import
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={filteredLeads.length === 0}
+                    onClick={() => exportToCsv(filteredLeads, columnsWithQualification)}
+                  >
+                    <Download className="size-3" weight="bold" />
+                    Export CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
 
+        <ImportLeadsDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          sheetId={activeSheetId as Id<"sheets">}
+        />
         <QualifyLeadsDialog
           open={qualifyDialogOpen}
           onOpenChange={setQualifyDialogOpen}

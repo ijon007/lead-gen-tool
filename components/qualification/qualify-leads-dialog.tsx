@@ -60,7 +60,7 @@ export function QualifyLeadsDialog({
             className="min-h-[100px] resize-y text-sm"
           />
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex flex-row items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"

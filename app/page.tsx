@@ -1,3 +1,5 @@
+"use client";
+
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignUpButton } from "@clerk/nextjs";
 import Link from "next/link";
