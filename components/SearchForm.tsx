@@ -46,7 +46,7 @@ export function SearchForm({
 }: SearchFormProps) {
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
-  const [limit, setLimit] = useState(defaultLimit);
+  const [limit, setLimit] = useState(defaultLimit as number);
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
 
@@ -117,10 +117,10 @@ export function SearchForm({
 
   return (
     <form
-      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-3"
+      className="flex flex-col gap-2 lg:gap-4 sm:flex-row sm:items-center sm:gap-3 w-full lg:w-auto"
       onSubmit={handleSubmit}
     >
-      <div className="flex min-w-0 max-w-40 flex-1 items-center">
+      <div className="flex min-w-0 w-full lg:max-w-40 items-center">
         <Combobox
           itemToStringValue={(cat) => cat.label}
           items={CATEGORIES}
@@ -128,7 +128,7 @@ export function SearchForm({
           value={CATEGORIES.find((c) => c.value === category) ?? null}
         >
           <ComboboxInput
-            className="w-full min-w-0"
+            className="w-full min-w-0 text-xs"
             id="category"
             placeholder="Select category"
             showClear
@@ -146,19 +146,20 @@ export function SearchForm({
         </Combobox>
       </div>
 
-      <div className="flex min-w-0 max-w-36 flex-1 items-center">
+      <div className="flex min-w-0 w-full lg:max-w-36 items-center">
         <Input
           id="location"
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Enter location"
           type="text"
+          className="text-xs"
           value={location}
         />
       </div>
 
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 w-full lg:max-w-20 items-center">
         <Input
-          className="w-20"
+          className="w-full lg:w-20 text-xs"
           id="limit"
           max={50}
           min={1}
@@ -170,7 +171,7 @@ export function SearchForm({
               setLimit(10);
             }
           }}
-          placeholder="Leads"
+          placeholder="No. of leads"
           type="number"
           value={limit}
         />

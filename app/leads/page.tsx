@@ -185,9 +185,14 @@ function PageContent() {
       className={`flex h-full min-h-0 min-w-0 flex-col transition-all duration-300 ${showLoadingForActiveTab ? "overflow-hidden" : ""}`}
     >
       <div className="min-w-0 flex-1 overflow-auto transition-all duration-300">
-        <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-background py-1">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <SidebarTrigger />
+        <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-background py-1 px-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <SidebarTrigger />
+              <span className="block sm:hidden truncate text-sm font-semibold text-foreground">
+                {activeSheet.name}
+              </span>
+            </div>
             <div className="flex min-w-0 flex-1 basis-full sm:basis-0">
               <SearchForm
                 columns={activeSheet.columns}
@@ -202,7 +207,7 @@ function PageContent() {
                 onSearch={handleSearch}
               />
             </div>
-            <div className="flex shrink-0">
+            <div className="flex shrink-0 w-full lg:w-auto">
               <ExportButton
                 columns={activeSheet.columns}
                 leads={filteredLeads}
@@ -211,28 +216,28 @@ function PageContent() {
           </div>
         </header>
 
-        <div className="py-2 transition-all duration-300">
-        <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
-          {showLoadingForActiveTab ? (
-            <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
-              <EnrichmentLoading stage={loadingStage} />
-            </main>
-          ) : hasSearched ? (
-            <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
-              <ResultsTable
-                leads={filteredLeads}
-                sheetId={activeSheetId ?? ""}
-                visibleColumns={activeSheet.columns}
-              />
-            </main>
-          ) : (
-            <div className="fade-in-0 animate-in py-12 text-center duration-300">
-              <p className="text-muted-foreground text-sm">
-                Use the search above to generate leads for this sheet.
-              </p>
-            </div>
-          )}
-        </div>
+        <div className="py-2 px-1 transition-all duration-300">
+          <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
+            {showLoadingForActiveTab ? (
+              <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
+                <EnrichmentLoading stage={loadingStage} />
+              </main>
+            ) : hasSearched ? (
+              <main className="fade-in-0 slide-in-from-top-4 animate-in space-y-4 duration-300">
+                <ResultsTable
+                  leads={filteredLeads}
+                  sheetId={activeSheetId ?? ""}
+                  visibleColumns={activeSheet.columns}
+                />
+              </main>
+            ) : (
+              <div className="fade-in-0 animate-in py-12 text-center duration-300">
+                <p className="text-muted-foreground text-sm">
+                  Use the search above to generate leads for this sheet.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

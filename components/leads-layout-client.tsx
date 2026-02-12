@@ -13,7 +13,7 @@ export function LeadsLayoutClient({ children }: { children: React.ReactNode }) {
           <SidebarProvider className="h-svh overflow-hidden">
             <AppSidebar />
             <SidebarInset className="min-h-0 min-w-0 border overflow-hidden">
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden p-2 pt-0">{children}</div>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden pt-0">{children}</div>
             </SidebarInset>
           </SidebarProvider>
         </LeadsProvider>

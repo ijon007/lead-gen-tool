@@ -21,6 +21,7 @@ export function ExportButton({ leads, columns, disabled }: ExportButtonProps) {
       disabled={disabled || leads.length === 0}
       onClick={handleExport}
       variant="outline"
+      className="text-xs w-full lg:w-auto"
     >
       <Download className="size-4" />
       Export CSV

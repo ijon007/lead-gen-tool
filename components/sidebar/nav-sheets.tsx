@@ -235,7 +235,7 @@ export function NavSheets() {
         })}
         <SidebarMenuItem>
           <SidebarMenuButton
-            className="text-sidebar-foreground/70"
+            className="text-sidebar-foreground/70 cursor-pointer"
             onClick={onAddSheet}
             tooltip="New sheet"
           >
