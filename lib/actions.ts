@@ -7,8 +7,10 @@ import type { Lead, TableColumnConfig } from "@/types";
 export async function searchPlacesAction(
   category: string,
   location: string,
-  limit?: number
-): Promise<{ leads: Lead[] } | { error: string }> {
+  limit?: number,
+  existingLeads?: Lead[],
+  nextPageToken?: string | null
+): Promise<{ leads: Lead[]; nextPageToken?: string | null } | { error: string }> {
   const cat = category?.trim() ?? "";
   const loc = location?.trim() ?? "";
   const searchLimit = limit ?? 10;
@@ -18,10 +20,31 @@ export async function searchPlacesAction(
   }
 
   try {
+    const isGetMore = existingLeads && existingLeads.length > 0;
+
+    if (isGetMore && nextPageToken) {
+      console.log("[searchPlacesAction] Get more: using nextPageToken");
+      const result = await searchPlaces(cat, loc, searchLimit, nextPageToken);
+      const newLeads = result.leads.slice(0, searchLimit);
+      console.log("[searchPlacesAction] Get more complete", newLeads.length, "new leads");
+      return { leads: newLeads, nextPageToken: result.nextPageToken ?? null };
+    }
+
+    if (isGetMore) {
+      console.log("[searchPlacesAction] Get more: no token, fetch first page and filter");
+      const result = await searchPlaces(cat, loc, 20);
+      const existingKeys = new Set(existingLeads!.map(existingLeadKey));
+      const newLeads = result.leads
+        .filter((l) => !existingKeys.has(existingLeadKey(l)))
+        .slice(0, searchLimit);
+      console.log("[searchPlacesAction] Get more complete", newLeads.length, "new leads");
+      return { leads: newLeads, nextPageToken: result.nextPageToken ?? null };
+    }
+
     console.log("[searchPlacesAction] Starting search", { category: cat, location: loc, limit: searchLimit });
-    const leads = await searchPlaces(cat, loc, searchLimit);
-    console.log("[searchPlacesAction] Search complete", leads.length, "leads");
-    return { leads };
+    const result = await searchPlaces(cat, loc, searchLimit);
+    console.log("[searchPlacesAction] Search complete", result.leads.length, "leads");
+    return { leads: result.leads, nextPageToken: result.nextPageToken ?? null };
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "An unexpected error occurred";
@@ -76,7 +99,7 @@ export async function addOneLeadAction(
   }
 
   try {
-    const leads = await searchPlaces(cat, loc, ADD_ONE_LEAD_SEARCH_LIMIT);
+    const { leads } = await searchPlaces(cat, loc, ADD_ONE_LEAD_SEARCH_LIMIT);
     const existingKeys = new Set(existingLeads.map(existingLeadKey));
 
     const newLead = leads.find((l) => !existingKeys.has(existingLeadKey(l)));

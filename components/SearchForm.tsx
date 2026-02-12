@@ -23,13 +23,15 @@ interface SearchFormProps {
   columns: TableColumnConfig[];
   sheetId: string;
   onSearch: (params: SearchParams, leads?: Lead[], sheetId?: string) => void;
-  onSearchStart?: (sheetId: string) => void;
+  onSearchStart?: (sheetId: string, isGetMore?: boolean, getMoreLimit?: number) => void;
   onSearchEnd?: () => void;
   onLoadingChange?: (loading: boolean) => void;
   onLoadingStageChange?: (stage: LoadingStage) => void;
   defaultCategory?: string;
   defaultLocation?: string;
   defaultLimit?: number;
+  existingLeads?: Lead[];
+  sheetSearchParams?: SearchParams | null;
 }
 
 export function SearchForm({
@@ -43,6 +45,8 @@ export function SearchForm({
   defaultCategory = "",
   defaultLocation = "",
   defaultLimit = 10,
+  existingLeads,
+  sheetSearchParams,
 }: SearchFormProps) {
   const [category, setCategory] = useState(defaultCategory);
   const [location, setLocation] = useState(defaultLocation);
@@ -60,12 +64,30 @@ export function SearchForm({
 
     setLoading(true);
     onLoadingChange?.(true);
-    onSearchStart?.(sheetId);
+    const isSameSearch = Boolean(
+      sheetSearchParams &&
+      category === sheetSearchParams.category &&
+      location === sheetSearchParams.location
+    );
+    const isGetMore = isSameSearch && Boolean(existingLeads && existingLeads.length > 0);
+    onSearchStart?.(sheetId, isGetMore, isGetMore ? limit : undefined);
     try {
       setLoadingStage("search");
       onLoadingStageChange?.("search");
-      console.log("[SearchForm] Stage: fetching places data", { category, location, limit });
-      const searchResult = await searchPlacesAction(category, location, limit);
+      const shouldExcludeExisting = isGetMore;
+      console.log("[SearchForm] Stage: fetching places data", {
+        category,
+        location,
+        limit,
+        shouldExcludeExisting,
+      });
+      const searchResult = await searchPlacesAction(
+        category,
+        location,
+        limit,
+        shouldExcludeExisting ? existingLeads : undefined,
+        shouldExcludeExisting ? sheetSearchParams?.nextPageToken ?? undefined : undefined
+      );
 
       if ("error" in searchResult) {
         console.error("[SearchForm] Search failed:", searchResult.error);
@@ -74,12 +96,24 @@ export function SearchForm({
         return;
       }
 
-      const { leads } = searchResult;
+      const { leads, nextPageToken } = searchResult;
+      if (shouldExcludeExisting && leads.length === 0) {
+        toast.info("No new places found for this search");
+        onSearchEnd?.();
+        return;
+      }
       console.log(
         "[SearchForm] Stage: data fetched",
         leads.length,
         "leads"
       );
+
+      const searchParams: SearchParams = {
+        category,
+        location,
+        limit,
+        nextPageToken: nextPageToken ?? undefined,
+      };
 
       setLoadingStage("enrich");
       onLoadingStageChange?.("enrich");
@@ -95,14 +129,14 @@ export function SearchForm({
       if (!enrichRes.ok) {
         console.error("Enrichment failed:", enrichData.error);
         toast.error(enrichData.error ?? "Enrichment failed. See console for details.");
-        onSearch({ category, location, limit }, leads, sheetId);
+        onSearch(searchParams, leads, sheetId);
         return;
       }
 
       const enrichedLeads = enrichData.leads ?? leads;
       console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, "enriched leads");
       toast.success("Search and enrichment completed successfully");
-      onSearch({ category, location, limit }, enrichedLeads, sheetId);
+      onSearch(searchParams, enrichedLeads, sheetId);
     } catch (err) {
       console.error("[SearchForm] Search failed:", err);
       toast.error("Search failed. See console for details.");

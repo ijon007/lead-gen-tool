@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import type { Lead, TableColumnConfig } from "@/types";
+import type { LoadingStage } from "./SearchForm";
 import { Plus, Spinner } from "@phosphor-icons/react";
 import { EmptyState } from "./ResultsTable/EmptyState";
 import { IndexColumnHeader } from "./ResultsTable/IndexColumnHeader";
@@ -48,6 +49,9 @@ export interface ResultsTableProps {
   onAddOneLead?: () => void;
   isAddingOneLead?: boolean;
   canAddOneLead?: boolean;
+  isLoadingMore?: boolean;
+  loadingMoreCount?: number;
+  loadingStage?: LoadingStage;
 }
 
 export function ResultsTable({
@@ -57,6 +61,9 @@ export function ResultsTable({
   onAddOneLead,
   isAddingOneLead = false,
   canAddOneLead = false,
+  isLoadingMore = false,
+  loadingMoreCount,
+  loadingStage,
 }: ResultsTableProps) {
 
   const visibleCols = visibleColumns.filter((col) => col.visible);
@@ -266,6 +273,36 @@ export function ResultsTable({
               </RowContextMenu>
             );
           })}
+          {isLoadingMore && loadingMoreCount && loadingMoreCount > 0 && (
+            <>
+              {Array.from({ length: loadingMoreCount }).map((_, idx) => {
+                const skeletonRowId = `skeleton-${idx}`;
+                const h = DEFAULT_ROW_HEIGHT;
+                return (
+                  <TableRow key={skeletonRowId} className="group/row" style={{ height: h }}>
+                    <TableCell className="px-2.5 py-3 align-top">
+                      <div className="h-4 w-6 animate-pulse rounded bg-muted-foreground/15" />
+                    </TableCell>
+                    {visibleCols.map((column) => (
+                      <TableCell key={column.id} className="px-2.5 py-3 align-top">
+                        <div
+                          className="h-4 flex-1 animate-pulse rounded bg-muted-foreground/10"
+                          style={{
+                            animationDelay: `${(idx + 1) * 50}ms`,
+                            maxWidth: column.id === "address" ? "12rem" : undefined,
+                          }}
+                        />
+                      </TableCell>
+                    ))}
+                    <TableCell className="px-2.5 py-3 align-top">
+                      <div className="h-4 w-16 animate-pulse rounded bg-muted-foreground/15" />
+                    </TableCell>
+                    <TableCell className="sticky right-0 z-20 w-8 border-border border-l bg-background p-0 align-top" />
+                  </TableRow>
+                );
+              })}
+            </>
+          )}
         </TableBody>
       </Table>
       <div className="flex items-center justify-center gap-2 border-t border-border bg-muted/30 ">

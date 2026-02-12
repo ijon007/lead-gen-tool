@@ -16,4 +16,5 @@ export interface PlaceResult {
 
 export interface SearchTextResponse {
   places?: PlaceResult[];
+  nextPageToken?: string;
 }

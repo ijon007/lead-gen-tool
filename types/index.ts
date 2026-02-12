@@ -22,6 +22,7 @@ export interface SearchParams {
   category: string;
   location: string;
   limit?: number;
+  nextPageToken?: string | null;
 }
 
 export interface TableColumnConfig {

@@ -11,8 +11,8 @@ export const listBySheet = query({
     if (sheet.userId !== user._id) throw new Error("Unauthorized");
     return await ctx.db
       .query("leads")
-      .withIndex("by_sheet", (q) => q.eq("sheetId", args.sheetId))
-      .order("desc")
+      .withIndex("by_sheet_and_created", (q) => q.eq("sheetId", args.sheetId))
+      .order("asc")
       .collect();
   },
 });
@@ -115,7 +115,8 @@ export const createBatch = mutation({
     const now = Date.now();
     const leadIds = [];
     
-    for (const lead of args.leads) {
+    for (let i = 0; i < args.leads.length; i++) {
+      const lead = args.leads[i];
       const id = await ctx.db.insert("leads", {
         sheetId: args.sheetId,
         userId: user._id,
@@ -135,7 +136,7 @@ export const createBatch = mutation({
         linkedIn: lead.linkedIn,
         x: lead.x,
         notes: lead.notes,
-        createdAt: now,
+        createdAt: now + i,
       });
       leadIds.push(id);
     }

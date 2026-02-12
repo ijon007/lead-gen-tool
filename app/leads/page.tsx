@@ -41,6 +41,8 @@ function PageContent() {
   const [loadingStage, setLoadingStage] = useState<LoadingStage>(null);
   const [searchInProgressForSheetId, setSearchInProgressForSheetId] = useState<string | null>(null);
   const [isAddingOneLead, setIsAddingOneLead] = useState(false);
+  const [isGetMore, setIsGetMore] = useState(false);
+  const [getMoreLimit, setGetMoreLimit] = useState<number | undefined>(undefined);
 
   const urlSheetId = searchParams.get("sheet");
   const activeSheetId = useMemo(() => {
@@ -67,7 +69,10 @@ function PageContent() {
 
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
-    return leads.map((lead) => ({
+    const byCreatedAsc = [...leads].sort(
+      (a, b) => a.createdAt - b.createdAt
+    );
+    return byCreatedAsc.map((lead) => ({
       id: lead._id,
       businessName: lead.businessName,
       category: lead.category,
@@ -106,14 +111,18 @@ function PageContent() {
     }
   }, [sheets, createSheet, router, pathname]);
 
-  function handleSearchStart(sheetId: string) {
+  function handleSearchStart(sheetId: string, isGetMoreMode?: boolean, limit?: number) {
     setSearchInProgressForSheetId(sheetId);
     setGeneratingSheetId(sheetId);
+    setIsGetMore(isGetMoreMode ?? false);
+    setGetMoreLimit(limit);
   }
 
   function handleSearchEnd() {
     setSearchInProgressForSheetId(null);
     setGeneratingSheetId(null);
+    setIsGetMore(false);
+    setGetMoreLimit(undefined);
   }
 
   async function handleSearch(params: SearchParams, existingLeads?: Lead[], sheetIdOverride?: string) {
@@ -241,6 +250,8 @@ function PageContent() {
                 onSearchStart={handleSearchStart}
                 onSearchEnd={handleSearchEnd}
                 onSearch={handleSearch}
+                existingLeads={filteredLeads}
+                sheetSearchParams={activeSheet?.searchParams ?? null}
               />
             </div>
             <div className="flex shrink-0 w-full lg:w-auto">
@@ -254,7 +265,7 @@ function PageContent() {
 
         <div className="py-2 px-1 transition-all duration-300">
           <div className="mx-auto w-full max-w-7xl min-w-0 transition-all duration-300">
-            {showLoadingForActiveTab ? (
+            {showLoadingForActiveTab && !isGetMore ? (
               <main className="fade-in-0 slide-in-from-top-4 animate-in overflow-hidden duration-300">
                 <EnrichmentLoading stage={loadingStage} />
               </main>
@@ -267,6 +278,9 @@ function PageContent() {
                   onAddOneLead={handleAddOneLead}
                   isAddingOneLead={isAddingOneLead}
                   canAddOneLead={canAddOneLead}
+                  isLoadingMore={isGetMore && showLoadingForActiveTab}
+                  loadingMoreCount={getMoreLimit}
+                  loadingStage={loadingStage}
                 />
               </main>
             ) : (

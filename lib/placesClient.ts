@@ -3,8 +3,7 @@ import type { Lead } from "@/types";
 import type { PlaceResult, SearchTextResponse } from "@/types/places";
 
 const PLACES_API_URL = "https://places.googleapis.com/v1/places:searchText";
-const FIELD_MASK =
-  "places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.websiteUri,places.rating,places.googleMapsUri,places.businessStatus";
+const FIELD_MASK ="places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.websiteUri,places.rating,places.googleMapsUri,places.businessStatus";
 
 function mapBusinessStatusToLeadStatus(businessStatus?: string): string {
   if (!businessStatus) return "open";
@@ -43,11 +42,14 @@ function placeToLead(place: PlaceResult, category: string, location: string): Le
   };
 }
 
+export type SearchPlacesResult = { leads: Lead[]; nextPageToken?: string };
+
 export async function searchPlaces(
   category: string,
   location: string,
-  limit?: number
-): Promise<Lead[]> {
+  limit?: number,
+  pageToken?: string
+): Promise<SearchPlacesResult> {
   const apiKey =
     process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_CLOUD_API_KEY;
   if (!apiKey) {
@@ -60,7 +62,14 @@ export async function searchPlaces(
   }
 
   const pageSize = limit ?? SEARCH_RESULT_LIMIT;
-  console.log("[placesClient] Fetching places", { textQuery, category, location, pageSize });
+  const body: Record<string, unknown> = {
+    textQuery,
+    languageCode: "en",
+    pageSize,
+  };
+  if (pageToken) body.pageToken = pageToken;
+
+  console.log("[placesClient] Fetching places", { textQuery, category, location, pageSize, hasPageToken: !!pageToken });
   const res = await fetch(PLACES_API_URL, {
     method: "POST",
     headers: {
@@ -68,11 +77,7 @@ export async function searchPlaces(
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask": FIELD_MASK,
     },
-    body: JSON.stringify({
-      textQuery,
-      languageCode: "en",
-      pageSize,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -90,5 +95,8 @@ export async function searchPlaces(
   const data = (await res.json()) as SearchTextResponse;
   const places = data.places ?? [];
   console.log("[placesClient] Places fetched", places.length, "results");
-  return places.map((p) => placeToLead(p, category, location));
+  return {
+    leads: places.map((p) => placeToLead(p, category, location)),
+    nextPageToken: data.nextPageToken,
+  };
 }

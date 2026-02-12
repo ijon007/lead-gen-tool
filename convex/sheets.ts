@@ -36,6 +36,7 @@ export const create = mutation({
         category: v.string(),
         location: v.string(),
         limit: v.optional(v.number()),
+        nextPageToken: v.optional(v.union(v.string(), v.null())),
       })
     ),
     columns: v.array(
@@ -71,6 +72,7 @@ export const update = mutation({
           category: v.string(),
           location: v.string(),
           limit: v.optional(v.number()),
+          nextPageToken: v.optional(v.union(v.string(), v.null())),
         })
       )
     ),
