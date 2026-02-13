@@ -1,7 +1,7 @@
 "use server";
 
 import { enrichLeads } from "@/lib/enrichLeads";
-import { qualifyLeads } from "@/lib/qualifyLeads";
+import { qualifyLeads, type QualificationDetails } from "@/lib/qualifyLeads";
 import { searchPlaces } from "@/lib/placesClient";
 import type { Lead, TableColumnConfig } from "@/types";
 
@@ -82,7 +82,7 @@ export async function qualifyLeadsAction(
   leads: Lead[],
   userInstructions: string
 ): Promise<
-  | { qualifications: Array<"High" | "Low" | "Skip"> }
+  | { qualifications: QualificationDetails[] }
   | { error: string }
 > {
   if (leads.length === 0) {

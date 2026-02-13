@@ -2,7 +2,7 @@ import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import type { Lead, TableColumnConfig } from "@/types";
-import { ENRICH_SYSTEM_PROMPT } from "./system-prompt";
+import { SYSTEM_PROMPT } from "./system-prompt";
 
 export type EnrichmentStrategy = "batch" | "per-lead";
 export const ENRICHMENT_STRATEGY: EnrichmentStrategy = "per-lead";
@@ -54,6 +54,35 @@ function mergeEnrichedWithLead(
   return result;
 }
 
+async function validateUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url || typeof url !== "string") return null;
+  try {
+    new URL(url);
+    return url;
+  } catch {
+    console.warn(`[validateUrl] Invalid URL format: ${url}`);
+    return null;
+  }
+}
+
+async function validateEnrichedData(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const validated = { ...data };
+  const urlFields = ["website", "instagram", "facebook", "linkedIn", "x"];
+  for (const field of urlFields) {
+    if (field in validated) {
+      validated[field] = await validateUrl(validated[field] as string);
+    }
+  }
+  if (validated.email && typeof validated.email === "string") {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(validated.email)) {
+      console.warn(`[validateEnrichedData] Invalid email format: ${validated.email}`);
+      validated.email = null;
+    }
+  }
+  return validated;
+}
+
 async function enrichLeadsBatch(
   leads: Lead[],
   columns: TableColumnConfig[]
@@ -72,7 +101,8 @@ async function enrichLeadsBatch(
 
   const { object } = await (generateObject as any)({
     model: google(ENRICH_MODEL_ID),
-    system: ENRICH_SYSTEM_PROMPT,
+    temperature: 0,
+    system: SYSTEM_PROMPT,
     tools: ENRICH_TOOLS,
     schema,
     prompt: 
@@ -84,10 +114,14 @@ async function enrichLeadsBatch(
 
   const enrichedArray = object.leads ?? [];
   console.log("[enrichLeads] AI batch complete, raw response:", enrichedArray.length, "enriched entries");
-  return leads.map((lead, index) => {
-    const enriched = enrichedArray[index] ?? {};
-    return mergeEnrichedWithLead(lead, enriched);
-  });
+  const validatedResults = await Promise.all(
+    leads.map(async (lead, index) => {
+      const enriched = enrichedArray[index] ?? {};
+      const validated = await validateEnrichedData(enriched);
+      return mergeEnrichedWithLead(lead, validated);
+    })
+  );
+  return validatedResults;
 }
 
 async function enrichLeadsPerLead(
@@ -111,7 +145,8 @@ async function enrichLeadsPerLead(
 
     const { object } = await (generateObject as any)({
       model: google(ENRICH_MODEL_ID),
-      system: ENRICH_SYSTEM_PROMPT,
+      temperature: 0,
+      system: SYSTEM_PROMPT,
       tools: ENRICH_TOOLS,
       schema: singleSchema,
       prompt: 
@@ -119,7 +154,8 @@ async function enrichLeadsPerLead(
     });
 
     console.log("[enrichLeads] AI raw response for", lead.businessName, ":", JSON.stringify(object, null, 2));
-    results.push(mergeEnrichedWithLead(lead, object as Record<string, unknown>));
+    const validated = await validateEnrichedData(object as Record<string, unknown>);
+    results.push(mergeEnrichedWithLead(lead, validated));
   }
 
   return results;

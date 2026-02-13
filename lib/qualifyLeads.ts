@@ -12,8 +12,34 @@ const QUALIFY_TOOLS = {
 } as const;
 
 const QUALIFY_SCHEMA = z.object({
+  criteria_evaluations: z.array(
+    z.object({
+      criterion: z.string(),
+      met: z.boolean(),
+      evidence: z.string(),
+      points: z.number().int().min(0).max(1),
+    })
+  ),
+  total_score: z.number().min(0).max(100),
   qualification: z.enum(["High", "Low", "Skip"]),
+  reasoning: z.string().max(300),
 });
+
+export type QualificationResult = "High" | "Low" | "Skip";
+
+export type QualificationDetails = {
+  qualification: QualificationResult;
+  score: number;
+  criteria_evaluations: Array<{
+    criterion: string;
+    met: boolean;
+    evidence: string;
+    points: number;
+  }>;
+  reasoning: string;
+};
+
+type QualifySchemaOutput = z.infer<typeof QUALIFY_SCHEMA>;
 
 function leadToContext(lead: Lead): string {
   const parts: string[] = [];
@@ -33,40 +59,64 @@ function leadToContext(lead: Lead): string {
   return parts.join("\n");
 }
 
-export type QualificationResult = "High" | "Low" | "Skip";
-
 export async function qualifyLeads(
   leads: Lead[],
   userInstructions: string
-): Promise<QualificationResult[]> {
+): Promise<QualificationDetails[]> {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not configured");
   }
   if (leads.length === 0) return [];
 
-  const results: QualificationResult[] = [];
+  const results: QualificationDetails[] = [];
+
+  const promptSuffix = `SCORING INSTRUCTIONS:
+1. Parse the user's criteria into individual, measurable requirements
+2. For EACH criterion, evaluate:
+   - criterion: state the specific requirement being checked
+   - met: true if the lead satisfies this requirement, false if not
+   - evidence: quote the specific field/data from the lead that proves this (e.g., "website: https://example.com")
+   - points: 1 if met, 0 if not met
+
+3. Calculate total_score: (sum of all points / total number of criteria) × 100
+
+4. Classify based on score:
+   - High: score ≥ 75 (strong fit, worth pursuing)
+   - Low: score 40-74 (partial fit, lower priority)
+   - Skip: score < 40 (poor fit, not worth pursuing)
+
+5. Provide reasoning: 2-3 sentences explaining why this score/classification was given
+
+CRITICAL: Be deterministic. The same lead data + same criteria must ALWAYS produce the same score.
+If you need to verify website content or social profiles, use the search tool.`;
 
   for (const lead of leads) {
     const leadContext = leadToContext(lead);
     const prompt = `Lead data:
 ${leadContext}
 
-User's criteria for a quality lead:
-${userInstructions.trim() || "No specific criteria given; use your judgment based on the lead data."}
+User's qualification criteria:
+${userInstructions.trim() || "General quality assessment - evaluate completeness of contact info, online presence, and professionalism."}
 
-If you need to verify something (e.g. check their website or socials), use the search tool. Then classify this lead as High, Low, or Skip.`;
+${promptSuffix}`;
 
     const { object } = await (generateObject as (opts: unknown) => Promise<{
-      object: { qualification: QualificationResult };
+      object: QualifySchemaOutput;
     }>)({
       model: google(QUALIFY_MODEL_ID),
+      temperature: 0,
       system: SYSTEM_PROMPT,
       tools: QUALIFY_TOOLS,
       schema: QUALIFY_SCHEMA,
       prompt,
     });
 
-    results.push(object.qualification);
+    results.push({
+      qualification: object.qualification,
+      score: object.total_score,
+      criteria_evaluations: object.criteria_evaluations,
+      reasoning: object.reasoning,
+    });
   }
 
   return results;

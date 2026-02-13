@@ -122,6 +122,9 @@ function PageContent() {
       x: lead.x,
       notes: lead.notes,
       qualification: lead.qualification,
+      qualificationScore: lead.qualificationScore,
+      qualificationReasoning: lead.qualificationReasoning,
+      qualificationCriteria: lead.qualificationCriteria,
     }));
   }, [leads]);
 
@@ -284,10 +287,16 @@ function PageContent() {
           setQualificationState(null);
           return;
         }
-        const updates = chunk.map((lead, j) => ({
-          leadId: lead.id as Id<"leads">,
-          qualification: result.qualifications[j] ?? "Skip",
-        }));
+        const updates = chunk.map((lead, j) => {
+          const d = result.qualifications[j];
+          return {
+            leadId: lead.id as Id<"leads">,
+            qualification: d?.qualification ?? "Skip",
+            qualificationScore: d?.score,
+            qualificationReasoning: d?.reasoning,
+            qualificationCriteria: d?.criteria_evaluations,
+          };
+        });
         await updateBatchLeads({ updates });
         setQualificationState({
           phase: "running",

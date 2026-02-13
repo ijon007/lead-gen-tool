@@ -8,11 +8,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/types";
+import { InfoIcon } from "@phosphor-icons/react";
 
 const QUALIFICATIONS = [
   { value: "High" as const, label: "High", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30" },
@@ -47,17 +54,26 @@ async function onUpdateQualification(
   await updateLead({ leadId: id as Id<"leads">, qualification });
 }
 
+function badgeLabel(lead: Lead): string {
+  const q = lead.qualification;
+  if (!q) return "–";
+  const score = lead.qualificationScore;
+  if (score != null) return `${q} (${score}/100)`;
+  return q;
+}
+
 export function QualificationCell({ lead }: QualificationCellProps) {
   const updateLead = useMutation(api.leads.update);
   const value = lead.qualification;
+  const hasDetails = lead.qualificationReasoning != null || (lead.qualificationCriteria?.length ?? 0) > 0;
 
   return (
     <TableCell className="w-28 p-0 align-top">
-      <div className="px-2.5 py-1.5">
+      <div className="px-2.5 py-1.5 flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <button className="w-full text-left" type="button">
+              <button className="text-left min-w-0 flex-1" type="button">
                 <Badge
                   variant="outline"
                   className={cn(
@@ -65,7 +81,7 @@ export function QualificationCell({ lead }: QualificationCellProps) {
                     getQualificationClass(value)
                   )}
                 >
-                  {value ?? "–"}
+                  {badgeLabel(lead)}
                 </Badge>
               </button>
             }
@@ -83,6 +99,32 @@ export function QualificationCell({ lead }: QualificationCellProps) {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        {hasDetails && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                type="button"
+              >
+                <InfoIcon className="size-3" weight="bold"/>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-sm">
+                {lead.qualificationReasoning && (
+                  <p className="mb-2">{lead.qualificationReasoning}</p>
+                )}
+                {lead.qualificationCriteria && lead.qualificationCriteria.length > 0 && (
+                  <ul className="list-inside list-disc space-y-0.5 text-left">
+                    {lead.qualificationCriteria.map((c, i) => (
+                      <li key={i}>
+                        {c.met ? "✓" : "✗"} {c.criterion}: {c.evidence}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
     </TableCell>
   );

@@ -50,6 +50,18 @@ export const create = mutation({
     qualification: v.optional(
       v.union(v.literal("High"), v.literal("Low"), v.literal("Skip"))
     ),
+    qualificationScore: v.optional(v.number()),
+    qualificationReasoning: v.optional(v.string()),
+    qualificationCriteria: v.optional(
+      v.array(
+        v.object({
+          criterion: v.string(),
+          met: v.boolean(),
+          evidence: v.string(),
+          points: v.number(),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -79,6 +91,9 @@ export const create = mutation({
       x: args.x,
       notes: args.notes,
       qualification: args.qualification,
+      qualificationScore: args.qualificationScore,
+      qualificationReasoning: args.qualificationReasoning,
+      qualificationCriteria: args.qualificationCriteria,
       createdAt: Date.now(),
     });
   },
@@ -110,6 +125,18 @@ export const createBatch = mutation({
             v.literal("High"),
             v.literal("Low"),
             v.literal("Skip")
+          )
+        ),
+        qualificationScore: v.optional(v.number()),
+        qualificationReasoning: v.optional(v.string()),
+        qualificationCriteria: v.optional(
+          v.array(
+            v.object({
+              criterion: v.string(),
+              met: v.boolean(),
+              evidence: v.string(),
+              points: v.number(),
+            })
           )
         ),
       })
@@ -148,6 +175,9 @@ export const createBatch = mutation({
         x: lead.x,
         notes: lead.notes,
         qualification: lead.qualification,
+        qualificationScore: lead.qualificationScore,
+        qualificationReasoning: lead.qualificationReasoning,
+        qualificationCriteria: lead.qualificationCriteria,
         createdAt: now + i,
       });
       leadIds.push(id);
@@ -183,6 +213,18 @@ export const update = mutation({
     x: v.optional(v.string()),
     notes: v.optional(v.string()),
     qualification: v.optional(qualificationValidator),
+    qualificationScore: v.optional(v.number()),
+    qualificationReasoning: v.optional(v.string()),
+    qualificationCriteria: v.optional(
+      v.array(
+        v.object({
+          criterion: v.string(),
+          met: v.boolean(),
+          evidence: v.string(),
+          points: v.number(),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -209,10 +251,22 @@ export const update = mutation({
     if (args.x !== undefined) updates.x = args.x;
     if (args.notes !== undefined) updates.notes = args.notes;
     if (args.qualification !== undefined) updates.qualification = args.qualification;
+    if (args.qualificationScore !== undefined) updates.qualificationScore = args.qualificationScore;
+    if (args.qualificationReasoning !== undefined) updates.qualificationReasoning = args.qualificationReasoning;
+    if (args.qualificationCriteria !== undefined) updates.qualificationCriteria = args.qualificationCriteria;
 
     await ctx.db.patch(args.leadId, updates);
   },
 });
+
+const qualificationCriteriaValidator = v.array(
+  v.object({
+    criterion: v.string(),
+    met: v.boolean(),
+    evidence: v.string(),
+    points: v.number(),
+  })
+);
 
 export const updateBatch = mutation({
   args: {
@@ -220,16 +274,23 @@ export const updateBatch = mutation({
       v.object({
         leadId: v.id("leads"),
         qualification: qualificationValidator,
+        qualificationScore: v.optional(v.number()),
+        qualificationReasoning: v.optional(v.string()),
+        qualificationCriteria: v.optional(qualificationCriteriaValidator),
       })
     ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
-    for (const { leadId, qualification } of args.updates) {
-      const lead = await ctx.db.get(leadId);
+    for (const u of args.updates) {
+      const lead = await ctx.db.get(u.leadId);
       if (!lead) throw new Error("Lead not found");
       if (lead.userId !== user._id) throw new Error("Unauthorized");
-      await ctx.db.patch(leadId, { qualification });
+      const patch: Record<string, unknown> = { qualification: u.qualification };
+      if (u.qualificationScore !== undefined) patch.qualificationScore = u.qualificationScore;
+      if (u.qualificationReasoning !== undefined) patch.qualificationReasoning = u.qualificationReasoning;
+      if (u.qualificationCriteria !== undefined) patch.qualificationCriteria = u.qualificationCriteria;
+      await ctx.db.patch(u.leadId, patch);
     }
   },
 });

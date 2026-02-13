@@ -17,6 +17,14 @@ export interface Lead {
   x?: string;
   notes?: string;
   qualification?: "High" | "Low" | "Skip";
+  qualificationScore?: number;
+  qualificationReasoning?: string;
+  qualificationCriteria?: Array<{
+    criterion: string;
+    met: boolean;
+    evidence: string;
+    points: number;
+  }>;
 }
 
 export interface SearchParams {

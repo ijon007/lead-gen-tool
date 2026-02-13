@@ -59,6 +59,18 @@ export default defineSchema({
         v.literal("Skip")
       )
     ),
+    qualificationScore: v.optional(v.number()),
+    qualificationReasoning: v.optional(v.string()),
+    qualificationCriteria: v.optional(
+      v.array(
+        v.object({
+          criterion: v.string(),
+          met: v.boolean(),
+          evidence: v.string(),
+          points: v.number(),
+        })
+      )
+    ),
     createdAt: v.number(),
   })
     .index("by_sheet", ["sheetId"])
