@@ -186,11 +186,11 @@ export function ResultsTable({
   }
 
   return (
-    <div className="min-w-0 rounded-md border">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-md border">
       <Table
         className="border-separate border-spacing-0"
         style={{ tableLayout: "fixed", width: "100%" }}
-        wrapperClassName="overflow-auto max-h-[calc(100vh-12rem)] scrollbar-thin"
+        wrapperClassName="min-h-0 flex-1 overflow-auto scrollbar-thin"
       >
         <colgroup className="border-b">
           <col style={{ width: effectiveColumnWidths[COL_INDEX] }} />
@@ -316,26 +316,25 @@ export function ResultsTable({
           )}
         </TableBody>
       </Table>
-      <div className="flex items-center justify-center gap-2 border-t border-border bg-muted/30 ">
+      <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border group hover:bg-muted/60 cursor-pointer">
         <Button
           type="button"
-          variant="ghost"
           size="sm"
-          className="gap-1.5"
+          className="gap-1.5 bg-transparent group-hover:bg-transparent hover:bg-transparent"
           disabled={!canAddOneLead || isAddingOneLead || !onAddOneLead}
           onClick={onAddOneLead}
         >
           {isAddingOneLead ? (
             <>
               <Spinner className="size-4 animate-spin duration-1000" weight="bold" />
-              <span className="text-muted-foreground text-xs">
+              <span className="text-muted-foreground group-hover:text-foreground text-xs transition-colors duration-300">
                 {ADD_ONE_MESSAGES[addOneMessageIndex]}
               </span>
             </>
           ) : (
             <>
               <Plus className="size-3" weight="bold" />
-              <span className="text-muted-foreground text-xs">
+              <span className="text-muted-foreground group-hover:text-foreground text-xs transition-colors duration-300">
                 Add new lead
               </span>
             </>

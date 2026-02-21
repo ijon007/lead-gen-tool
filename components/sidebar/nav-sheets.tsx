@@ -134,9 +134,10 @@ export function NavSheets() {
       <SidebarMenu className="flex group-data-[collapsible=icon]:items-center">
         <SidebarMenuItem>
           <SidebarMenuButton
-            className="text-sidebar-foreground/70 cursor-pointer"
+            className="flex items-center text-sidebar-foreground/70 cursor-pointer"
             onClick={onAddSheet}
             tooltip="New sheet"
+            size="sm"
           >
             <Plus className="size-3" weight="bold"/>
             <span>New sheet</span>
@@ -144,7 +145,7 @@ export function NavSheets() {
         </SidebarMenuItem>
       </SidebarMenu>
       <SidebarGroupLabel className="mt-1">Sheets</SidebarGroupLabel>
-      <SidebarMenu className="flex group-data-[collapsible=icon]:items-center">
+      <SidebarMenu className="flex group-data-[collapsible=icon]:items-center gap-1">
         {sheetsList.map((sheet) => {
           const isActive = sheet.id === activeSheetId;
           const isEditing = editingId === sheet.id;
@@ -153,7 +154,7 @@ export function NavSheets() {
           return (
             <SidebarMenuItem key={sheet.id}>
               {isEditing ? (
-                <div className="flex items-center gap-1 px-2 py-1.5">
+                <div className="flex items-center gap-1 px-2 h-7">
                   <input
                     className="box-border w-full min-w-0 rounded border border-primary/60 bg-background px-1.5 py-0.5 text-xs outline-none"
                     defaultValue={sheet.name}
@@ -180,6 +181,7 @@ export function NavSheets() {
                     }}
                     tooltip={sheet.name}
                     className="cursor-pointer"
+                    size="sm"
                   >
                     {isGenerating ? (
                       <Spinner className="size-3.5 shrink-0 animate-spin" weight="bold" />
