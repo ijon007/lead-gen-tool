@@ -9,7 +9,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import type { Lead, TableColumnConfig } from "@/types";
 import type { LoadingStage } from "../search-form";
 import { Plus, Spinner } from "@phosphor-icons/react";
@@ -316,7 +315,7 @@ export function ResultsTable({
           )}
         </TableBody>
       </Table>
-      <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border group hover:bg-muted/60 cursor-pointer">
+      <div className="flex shrink-0 items-center justify-center gap-2 border-t border-border group hover:bg-muted/60 cursor-pointer transition-colors duration-300">
         <Button
           type="button"
           size="sm"

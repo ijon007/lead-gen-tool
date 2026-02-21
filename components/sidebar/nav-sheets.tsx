@@ -154,7 +154,7 @@ export function NavSheets() {
           return (
             <SidebarMenuItem key={sheet.id}>
               {isEditing ? (
-                <div className="flex items-center gap-1 px-2 h-7">
+                <div className="flex items-center gap-1 px-2 h-6">
                   <input
                     className="box-border w-full min-w-0 rounded border border-primary/60 bg-background px-1.5 py-0.5 text-xs outline-none"
                     defaultValue={sheet.name}
