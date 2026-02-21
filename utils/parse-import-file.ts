@@ -97,9 +97,9 @@ function rowToLead(
     } else if (fieldId === "qualification" && QUALIFICATION_VALUES.has(value)) {
       lead.qualification = value as "High" | "Low" | "Skip";
     } else if (REQUIRED.includes(fieldId)) {
-      (lead as Record<string, string>)[fieldId] = value;
+      (lead as unknown as Record<string, string>)[fieldId] = value;
     } else if (value) {
-      (lead as Record<string, unknown>)[fieldId] = value;
+      (lead as unknown as Record<string, unknown>)[fieldId] = value;
     }
   }
   return lead;
