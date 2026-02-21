@@ -37,11 +37,31 @@ import {
   type SortDirection,
 } from "@/utils/table-utils";
 
+const STORAGE_KEY_COLUMN_WIDTHS = "lead-gen-results-table-column-widths";
+
 const ADD_ONE_MESSAGES = [
   "Adding one lead...",
   "Fetching next result...",
   "Enriching with AI...",
 ];
+
+function loadColumnWidthsFromStorage(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_COLUMN_WIDTHS);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: Record<string, number> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      const n = Number(val);
+      if (Number.isFinite(n) && n >= MIN_COL_WIDTH) out[key] = n;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
 
 export interface ResultsTableProps {
   leads: Lead[];
@@ -82,11 +102,15 @@ export function ResultsTable({
     return w;
   }, [visibleCols]);
 
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    loadColumnWidthsFromStorage
+  );
   const effectiveColumnWidths = useMemo(
     () => ({ ...initialColumnWidths, ...columnWidths }),
     [initialColumnWidths, columnWidths]
   );
+  const effectiveWidthsRef = useRef(effectiveColumnWidths);
+  effectiveWidthsRef.current = effectiveColumnWidths;
   const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
 
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
@@ -102,7 +126,19 @@ export function ResultsTable({
       );
       setColumnWidths((prev) => ({ ...prev, [resizingColumn]: w }));
     };
-    const onUp = () => setResizingColumn(null);
+    const onUp = () => {
+      setResizingColumn(null);
+      setTimeout(() => {
+        try {
+          window.localStorage.setItem(
+            STORAGE_KEY_COLUMN_WIDTHS,
+            JSON.stringify(effectiveWidthsRef.current)
+          );
+        } catch {
+          // ignore
+        }
+      }, 0);
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {

@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
-import { TestToastTrigger } from "@/components/test-toast-trigger";
 import ConvexClientProvider from "@/components/providers/convex-client-provider";
 import "./globals.css";
 
