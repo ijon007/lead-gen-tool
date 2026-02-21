@@ -22,15 +22,20 @@ export async function POST(req: Request) {
       columns?: TableColumnConfig[];
     };
 
-    // Enrichment: leads + columns -> AI-enriched leads
+    // Enrichment: leads + columns -> AI-enriched leads (leads always come from Places API; we only add contact info)
     if (body.leads != null && body.columns != null) {
       const leads = body.leads ?? [];
       const columns = body.columns ?? [];
       if (leads.length > 0) {
-        console.log("[api/ai-sdk] Enriching", leads.length, "leads with AI");
-        const enrichedLeads = await enrichLeads(leads, columns);
-        console.log("[api/ai-sdk] Enrichment complete. AI response (enriched leads):", JSON.stringify(enrichedLeads, null, 2));
-        return Response.json({ leads: enrichedLeads });
+        console.log("[api/ai-sdk] AI enrichment starting for", leads.length, "leads (from Places API)");
+        try {
+          const enrichedLeads = await enrichLeads(leads, columns);
+          console.log("[api/ai-sdk] Enrichment complete");
+          return Response.json({ leads: enrichedLeads });
+        } catch (err) {
+          console.warn("[api/ai-sdk] Enrichment failed, returning Places leads un-enriched", err);
+          return Response.json({ leads, enrichmentFailed: true });
+        }
       }
       return Response.json({ leads: [] });
     }

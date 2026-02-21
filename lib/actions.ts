@@ -24,7 +24,7 @@ export async function searchPlacesAction(
     const isGetMore = existingLeads && existingLeads.length > 0;
 
     if (isGetMore && nextPageToken) {
-      console.log("[searchPlacesAction] Get more: using nextPageToken");
+      console.log("[searchPlacesAction] Get more: using nextPageToken, calling Places API");
       const result = await searchPlaces(cat, loc, searchLimit, nextPageToken);
       const newLeads = result.leads.slice(0, searchLimit);
       console.log("[searchPlacesAction] Get more complete", newLeads.length, "new leads");
@@ -32,7 +32,7 @@ export async function searchPlacesAction(
     }
 
     if (isGetMore) {
-      console.log("[searchPlacesAction] Get more: no token, fetch first page and filter");
+      console.log("[searchPlacesAction] Get more: no token, fetch first page and filter, calling Places API");
       const result = await searchPlaces(cat, loc, 20);
       const existingKeys = new Set(existingLeads!.map(existingLeadKey));
       const newLeads = result.leads
@@ -42,7 +42,7 @@ export async function searchPlacesAction(
       return { leads: newLeads, nextPageToken: result.nextPageToken ?? null };
     }
 
-    console.log("[searchPlacesAction] Starting search", { category: cat, location: loc, limit: searchLimit });
+    console.log("[searchPlacesAction] Starting search, calling Places API", { category: cat, location: loc, limit: searchLimit });
     const result = await searchPlaces(cat, loc, searchLimit);
     console.log("[searchPlacesAction] Search complete", result.leads.length, "leads");
     return { leads: result.leads, nextPageToken: result.nextPageToken ?? null };

@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLeadsContext } from "@/components/providers/leads-context";
+import { playCompletionSound } from "@/lib/playCompletionSound";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DEFAULT_TABLE_COLUMNS } from "@/constants";
@@ -305,6 +306,7 @@ function PageContent() {
         });
       }
       setQualificationState({ phase: "done", total, done: total });
+      playCompletionSound();
     })();
   }
 

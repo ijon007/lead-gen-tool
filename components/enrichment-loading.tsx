@@ -17,6 +17,7 @@ const ENRICH_MESSAGES = [
   "Finding email and phone numbers...",
   "Checking social media...",
   "Enriching with AI tools...",
+  "This may take a few minutes for multiple leads...",
 ];
 
 interface EnrichmentLoadingProps {

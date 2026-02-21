@@ -340,3 +340,89 @@
 .dark .sticky-table-header {
   box-shadow: 0 2px 0 0 oklch(0.35 0 0);
 }
+
+/* Sonner toasts – minimal, small, theme-aware */
+[data-sonner-toaster] {
+  --normal-bg: var(--popover);
+  --normal-text: var(--popover-foreground);
+  --normal-border: var(--border);
+  --success-bg: var(--popover);
+  --success-text: var(--popover-foreground);
+  --success-border: var(--border);
+  --error-bg: var(--popover);
+  --error-text: var(--popover-foreground);
+  --error-border: var(--destructive);
+  --warning-bg: var(--popover);
+  --warning-text: var(--popover-foreground);
+  --warning-border: var(--border);
+  --info-bg: var(--popover);
+  --info-text: var(--popover-foreground);
+  --info-border: var(--border);
+}
+
+[data-sonner-toast][data-type="success"] {
+  --toast-bg: var(--popover);
+  --toast-border: var(--border);
+  --toast-text: var(--popover-foreground);
+}
+[data-sonner-toast][data-type="error"] {
+  --toast-bg: var(--popover);
+  --toast-border: var(--destructive);
+  --toast-text: var(--popover-foreground);
+}
+[data-sonner-toast][data-type="warning"],
+[data-sonner-toast][data-type="info"] {
+  --toast-bg: var(--popover);
+  --toast-border: var(--border);
+  --toast-text: var(--popover-foreground);
+}
+
+.cn-toast,
+[data-sonner-toast] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 0.375rem 0.625rem !important;
+  min-height: auto !important;
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+  box-shadow: 0 2px 8px oklch(0 0 0 / 0.08) !important;
+}
+
+.dark .cn-toast,
+.dark [data-sonner-toast] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 2px 12px oklch(0 0 0 / 0.35) !important;
+}
+
+.cn-toast-title,
+[data-sonner-toast] [data-title] {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  padding: 0 !important;
+}
+
+.cn-toast-description,
+[data-sonner-toast] [data-description] {
+  font-size: 0.6875rem !important;
+  color: var(--muted-foreground) !important;
+  margin-top: 0.125rem !important;
+}
+
+.cn-toast-close,
+[data-sonner-toast] [data-close] {
+  background: transparent !important;
+  border: none !important;
+  color: var(--muted-foreground) !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  border-radius: var(--radius-sm) !important;
+}
+.cn-toast-close:hover,
+[data-sonner-toast] [data-close]:hover {
+  color: var(--foreground) !important;
+  background: var(--muted) !important;
+}

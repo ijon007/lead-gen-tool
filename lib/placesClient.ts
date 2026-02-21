@@ -69,7 +69,7 @@ export async function searchPlaces(
   };
   if (pageToken) body.pageToken = pageToken;
 
-  console.log("[placesClient] Fetching places", { textQuery, category, location, pageSize, hasPageToken: !!pageToken });
+  console.log("[placesClient] Fetching from Places API", { textQuery, category, location, pageSize, hasPageToken: !!pageToken });
   const res = await fetch(PLACES_API_URL, {
     method: "POST",
     headers: {
@@ -94,7 +94,7 @@ export async function searchPlaces(
 
   const data = (await res.json()) as SearchTextResponse;
   const places = data.places ?? [];
-  console.log("[placesClient] Places fetched", places.length, "results");
+  console.log("[placesClient] Places API returned", places.length, "results");
   return {
     leads: places.map((p) => placeToLead(p, category, location)),
     nextPageToken: data.nextPageToken,

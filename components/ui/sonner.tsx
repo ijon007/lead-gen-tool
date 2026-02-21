@@ -5,40 +5,39 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme = "system", resolvedTheme } = useTheme()
+  const effectiveTheme = resolvedTheme ?? (theme === "system" ? undefined : theme)
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={(effectiveTheme as ToasterProps["theme"]) ?? "system"}
       className="toaster group"
+      position="bottom-right"
+      closeButton={false}
+      gap={6}
       icons={{
         success: (
-          <CheckCircleIcon className="size-4" />
+          <CheckCircleIcon className="size-4 shrink-0" weight="fill" />
         ),
         info: (
-          <InfoIcon className="size-4" />
+          <InfoIcon className="size-4 shrink-0" weight="fill" />
         ),
         warning: (
-          <WarningIcon className="size-4" />
+          <WarningIcon className="size-4 shrink-0" weight="fill" />
         ),
         error: (
-          <XCircleIcon className="size-4" />
+          <XCircleIcon className="size-4 shrink-0" weight="fill" />
         ),
         loading: (
-          <SpinnerIcon className="size-4 animate-spin" />
+          <SpinnerIcon className="size-4 shrink-0 animate-spin" weight="fill" />
         ),
       }}
-      style={
-        {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
-        } as React.CSSProperties
-      }
       toastOptions={{
         classNames: {
           toast: "cn-toast",
+          title: "cn-toast-title",
+          description: "cn-toast-description",
+          closeButton: "cn-toast-close",
         },
       }}
       {...props}

@@ -56,7 +56,7 @@ export function ThemeSwitcher() {
   }
 
   return (
-    <div className="flex w-full items-center justify-between gap-2 px-2 py-1.5">
+    <div className="flex w-full items-center justify-between gap-2 py-1.5">
       <span className="truncate text-xs font-medium text-sidebar-foreground">
         Theme
       </span>

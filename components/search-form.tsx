@@ -14,6 +14,7 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { searchPlacesAction } from "@/lib/actions";
+import { playCompletionSound } from "@/lib/playCompletionSound";
 import { CATEGORIES } from "@/constants";
 import type { Lead, SearchParams, TableColumnConfig } from "@/types";
 
@@ -112,11 +113,12 @@ export function SearchForm({
         category,
         location,
         limit,
-        nextPageToken: nextPageToken ?? undefined,
+        nextPageToken: nextPageToken ?? null,
       };
 
       setLoadingStage("enrich");
       onLoadingStageChange?.("enrich");
+      toast.info(`Enriching ${leads.length} lead${leads.length === 1 ? "" : "s"} with AI… This may take a few minutes.`);
       console.log("[SearchForm] Stage: enriching with AI, calling /api/ai-sdk");
       const enrichRes = await fetch("/api/ai-sdk", {
         method: "POST",
@@ -134,8 +136,14 @@ export function SearchForm({
       }
 
       const enrichedLeads = enrichData.leads ?? leads;
-      console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, "enriched leads");
-      toast.success("Search and enrichment completed successfully");
+      const enrichmentFailed = enrichData.enrichmentFailed === true;
+      console.log("[SearchForm] Stage: enrichment complete", enrichedLeads.length, enrichmentFailed ? "(un-enriched)" : "enriched leads");
+      if (enrichmentFailed) {
+        toast.warning("Leads saved from Places; AI enrichment failed. You can retry or use leads as-is.");
+      } else {
+        toast.success("Search and enrichment completed successfully");
+      }
+      if (!enrichmentFailed) playCompletionSound();
       onSearch(searchParams, enrichedLeads, sheetId);
     } catch (err) {
       console.error("[SearchForm] Search failed:", err);
