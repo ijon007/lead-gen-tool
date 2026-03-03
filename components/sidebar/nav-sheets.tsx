@@ -186,7 +186,7 @@ export function NavSheets() {
                     {isGenerating ? (
                       <Spinner className="size-3.5 shrink-0 animate-spin" weight="bold" />
                     ) : (
-                      <Table className="size-3.5 shrink-0 text-sidebar-foreground/70" weight="fill" />
+                      <Table className="size-3.5 shrink-0 text-primary" weight="fill" />
                     )}
                     <span className="truncate">{sheet.name}</span>
                   </SidebarMenuButton>

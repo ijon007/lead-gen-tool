@@ -15,10 +15,10 @@ export default function Home() {
           <Link href="/leads">
             <Button
               variant="secondary"
-              className="group gap-1.5 border-white/20 px-3 font-medium text-foreground transition-all hover:gap-2 hover:bg-white"
+              className="group gap-1.5 dark:bg-white dark:text-black px-3 font-medium text-foreground transition-all hover:gap-2 hover:bg-white"
             >
               Go to Leads
-              <ArrowRightIcon className="size-3 shrink-0 transition-transform group-hover:translate-x-0.5" weight="bold" />
+              <ArrowRightIcon className="size-3 transition-transform group-hover:translate-x-0.5" weight="bold" />
             </Button>
           </Link>
         </HeroContent>
